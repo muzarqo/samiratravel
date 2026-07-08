@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulsa Internet Umroh-Ku</title>
+<style>
+  :root{
+    --indigo:#4A3AB0; --indigo-deep:#2E2270; --paper:#F3F1FB; --card:#FFFFFF;
+    --line:#E1DDF3; --ink:#211C3B; --muted:#6C6791; --gold:#C8973F; --green:#2F8558;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--paper); color:var(--ink); display:flex; justify-content:center; padding:0 0 60px; }
+  .page{ width:100%; max-width:520px; }
+  .topbar{ height:8px; background:linear-gradient(90deg, var(--indigo), #7A6BE0); }
+
+  .brand{ background:var(--card); padding:22px 22px 18px; border-bottom:1px solid var(--line); }
+  .brand-row{ display:flex; align-items:center; gap:12px; }
+  .brand-icon{ width:38px; height:38px; border-radius:9px; background:var(--indigo); display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0; }
+  .brand h1{ font-size:19px; margin:0; color:var(--indigo-deep); }
+  .brand .tagline{ font-size:13px; margin:10px 0 0; line-height:1.5; }
+  .brand .partner{ font-style:italic; }
+
+  .steps{ display:flex; gap:8px; padding:14px 22px 0; }
+  .step-dot{ flex:1; height:4px; border-radius:2px; background:var(--line); }
+  .step-dot.active{ background:var(--indigo); }
+
+  .card{ background:var(--card); margin:14px 16px 0; border-radius:12px; border:1px solid var(--line); padding:18px; }
+  .card-title{ font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--indigo); margin:0 0 14px; }
+
+  label{ display:block; font-size:14px; font-weight:600; margin-bottom:6px; }
+  label .req{ color:#B23A3A; }
+  .field{ margin-bottom:18px; }
+  .field:last-child{ margin-bottom:0; }
+  input[type=text], input[type=tel], input[type=date], select{
+    width:100%; padding:10px 2px; border:none; border-bottom:1.5px solid var(--line);
+    background:transparent; font-size:15px; color:var(--ink); font-family:inherit; outline:none;
+  }
+  input::placeholder{ color:#A9A3C6; }
+  input:focus, select:focus{ border-bottom-color:var(--indigo); }
+  select{ padding:10px; border:1.5px solid var(--line); border-radius:8px; background:#fff; }
+  select:focus{ border-color:var(--indigo); }
+  select option.best::after{ content:" ★ Best Seller"; }
+
+  .pkg-loading{ font-size:12.5px; color:var(--muted); margin-top:6px; }
+
+  .summary-row{ display:flex; justify-content:space-between; align-items:baseline; padding:8px 0; font-size:14px; }
+  .summary-row + .summary-row{ border-top:1px dashed var(--line); }
+  .summary-row .label{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; font-weight:600; margin:0; }
+  .summary-row .val{ font-weight:600; text-align:right; }
+  .summary-row.total .val{ font-size:20px; color:var(--indigo-deep); }
+
+  .bank-card{ background:var(--indigo-deep); color:#E7E2FF; border-radius:12px; padding:18px; margin-bottom:12px; }
+  .bank-name{ font-size:12.5px; color:#C4BBF5; margin-bottom:4px; }
+  .acc-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .acc-number{ font-size:21px; font-weight:700; letter-spacing:.03em; font-variant-numeric: tabular-nums; }
+  .copy-btn{ background:var(--gold); color:var(--indigo-deep); border:none; border-radius:8px; padding:8px 13px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap; }
+  .copy-btn.copied{ background:#9BDDB4; }
+
+  .ewallet-card{ background:#F5F3FC; border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+  .ewallet-label{ font-size:12.5px; color:var(--muted); margin-bottom:4px; }
+  .ewallet-card .acc-number{ color:var(--indigo-deep); font-size:19px; }
+
+  .file-drop{ border:1.5px dashed var(--line); border-radius:10px; padding:16px; text-align:center; font-size:13px; color:var(--muted); cursor:pointer; background:#FBFAFF; }
+  .file-drop.has-file{ border-color:var(--green); color:var(--green); font-weight:600; }
+  input[type=file]{ display:none; }
+
+  .btn{ width:100%; margin-top:16px; padding:15px; border:none; border-radius:11px; font-size:15px; font-weight:700; cursor:pointer; }
+  .btn-primary{ background:var(--indigo); color:#fff; }
+  .btn-primary:disabled{ background:#C9C4E8; cursor:not-allowed; }
+  .btn-wa{ background:var(--green); color:#fff; }
+  .btn-ghost{ background:transparent; color:var(--indigo); margin-top:10px; padding:8px; }
+
+  .note{ font-size:12px; color:var(--muted); margin-top:10px; line-height:1.5; }
+  footer{ text-align:center; font-size:11.5px; color:var(--muted); margin:24px 16px 0; }
+
+  #step2{ display:none; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar"></div>
+
+  <div class="brand">
+    <div class="brand-row">
+      <div class="brand-icon">📶</div>
+      <h1>PULSA INTERNET UMROH-KU</h1>
+    </div>
+    <p class="tagline">Solusi Internet Khusus Jemaah Umroh &amp; Haji - <span class="partner">partner SAMIRA TRAVEL</span></p>
+  </div>
+
+  <div class="steps">
+    <div class="step-dot active" id="dot1"></div>
+    <div class="step-dot" id="dot2"></div>
+  </div>
+
+  <!-- ===================== STEP 1 : FORM ===================== -->
+  <div id="step1">
+    <div class="card">
+      <p class="card-title">Langkah 1 — Data Pemesan</p>
+
+      <div class="field">
+        <label>No. WhatsApp <span class="req">*</span></label>
+        <input type="tel" id="wa" placeholder="Contoh: 08123456789" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Nama Lengkap <span class="req">*</span></label>
+        <input type="text" id="nama" placeholder="Jawaban Anda">
+      </div>
+      <div class="field">
+        <label>Nomor HP yang di isi Paket Roaming Umroh/Haji <span class="req">*</span></label>
+        <input type="tel" id="hpRoaming" placeholder="Jawaban Anda" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Jadwal Keberangkatan <span class="req">*</span></label>
+        <input type="date" id="tanggal">
+      </div>
+      <div class="field">
+        <label>Pilih Operator Seluler Anda: <span class="req">*</span></label>
+        <select id="operatorGroup">
+          <option value="">Pilih</option>
+          <option value="TELKOMSEL">TELKOMSEL</option>
+          <option value="INDOSAT_TRI">INDOSAT / TRI (3)</option>
+          <option value="XL_AXIS_SMARTFREN">XL / AXIS / SMARTFREN</option>
+        </select>
+      </div>
+      <div class="field" id="paketWrap" style="display:none;">
+        <label>Pilih Paket <span class="req">*</span></label>
+        <select id="paket"></select>
+        <div class="pkg-loading" id="pkgStatus"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btnNext">Lanjut ke Pembayaran →</button>
+  </div>
+
+  <!-- ===================== STEP 2 : PAYMENT ===================== -->
+  <div id="step2">
+    <div class="card">
+      <p class="card-title">Langkah 2 — Ringkasan Pesanan</p>
+      <div class="summary-row"><span class="label">Nama</span><span class="val" id="sumNama">-</span></div>
+      <div class="summary-row"><span class="label">Paket</span><span class="val" id="sumPaket">-</span></div>
+      <div class="summary-row"><span class="label">Nomor Diisi Paket</span><span class="val" id="sumHp">-</span></div>
+      <div class="summary-row"><span class="label">Keberangkatan</span><span class="val" id="sumTgl">-</span></div>
+      <div class="summary-row total"><span class="label">Total Bayar</span><span class="val" id="sumHarga">Rp 0</span></div>
+    </div>
+
+    <div class="card">
+      <p class="card-title">Pembayaran</p>
+      <div class="bank-card">
+        <div class="bank-name" id="bankName">CIMB Niaga a/n TOKO SIM UMROH</div>
+        <div class="acc-row">
+          <span class="acc-number" id="accNumber">7405 8801 2001</span>
+          <button class="copy-btn" id="copyAcc" data-copy="740588012001">Salin</button>
+        </div>
+      </div>
+      <div class="ewallet-card">
+        <div class="ewallet-label">Nomor GoPay / DANA</div>
+        <div class="acc-row">
+          <span class="acc-number" id="ewalletNumber">0812 9591 4051</span>
+          <button class="copy-btn" id="copyEwallet" data-copy="081295914051">Salin</button>
+        </div>
+      </div>
+      <p class="note" style="margin-top:10px;">Buka aplikasi GoPay atau DANA Anda, lalu kirim/transfer ke nomor di atas sesuai Total Bayar.</p>
+    </div>
+
+    <div class="card">
+      <p class="card-title">Upload &amp; Kirim Konfirmasi</p>
+      <div class="field">
+        <label>Bukti Transfer</label>
+        <div class="file-drop" id="fileDrop">📎 Ketuk untuk pilih foto/screenshot bukti transfer</div>
+        <input type="file" id="fileInput" accept="image/*">
+      </div>
+      <button class="btn btn-wa" id="btnWa">Kirim Konfirmasi via WhatsApp</button>
+      <button class="btn btn-ghost" id="btnBack">← Kembali ubah data</button>
+      <p class="note">Pesanan otomatis tercatat ke spreadsheet saat tombol ini ditekan. Foto bukti transfer perlu dilampirkan manual di chat WhatsApp karena keterbatasan browser.</p>
+    </div>
+  </div>
+
+  <footer>Data Anda hanya digunakan untuk proses pemesanan paket internet umroh/haji.</footer>
+</div>
+
+<script>
+  // ================= EDIT BAGIAN INI SESUAI DATA ANDA =================
+  const CONFIG = {
+    adminWhatsApp: "6285111657589",
+    bankAccountRaw: "708869942300",
+    bankAccountDisplay: "7088 6994 2300",
+    bankName: "CIMB Niaga a/n IWAN RIFAI",
+
+    // ID spreadsheet Anda (dari URL: .../d/ID_INI/edit)
+    // Dipakai untuk BACA daftar paket langsung dari sheet "Paket" (kolom A:E).
+    // Sheet WAJIB di-share: General access -> "Anyone with the link" -> Viewer.
+    sheetId: "1Qdd0jYOAQthtmrvWM9cZYqJv-wIwK6GxS1JQWs9hTj0",
+    sheetNamaPaket: "Paket",
+
+    // Isi dengan Web App URL Apps Script Anda (lihat panduan Code.gs).
+    // Dipakai untuk MENCATAT pesanan yang masuk ke sheet "Pesanan".
+    // Biarkan kosong "" jika belum siap -- konfirmasi WA tetap jalan, hanya pencatatan yang dilewati.
+    scriptUrl: "https://script.google.com/macros/s/AKfycbyFjLGLfiAYzVjVfORdXJsruoaQKjy0XoGpA_QMLhxKjsDnleK_wGj0uBADY3QzGB6dJw/exec"
+  };
+
+  // Data cadangan (dipakai jika scriptUrl kosong / spreadsheet belum bisa diakses)
+  const FALLBACK_PACKAGES = {
+    TELKOMSEL: [
+      { name: "Tsel Umroh 10GB / 12 Hari", price: 310000, best: false },
+      { name: "Tsel Umroh 10GB / 17 Hari", price: 385000, best: true },
+      { name: "Tsel Umroh 50GB / 12 Hari", price: 410000, best: false },
+      { name: "Tsel Umroh 20GB / 17 Hari", price: 435000, best: false },
+    ],
+    INDOSAT_TRI: [
+      { name: "Isat Umroh 7GB / 12 Hari", price: 250000, best: false },
+      { name: "Isat Umroh 51GB / 12 Hari", price: 410000, best: false },
+      { name: "Isat Umroh 10GB / 20 Hari", price: 350000, best: true },
+      { name: "Isat Umroh 15GB / 15 Hari", price: 350000, best: false },
+      { name: "Tri Ibadah 7GB / 12 Hari", price: 250000, best: false },
+      { name: "Tri Ibadah 51GB / 12 Hari", price: 410000, best: false },
+      { name: "Tri Ibadah 15GB / 15 Hari", price: 350000, best: true },
+      { name: "Tri Ibadah 71GB / 15 Hari", price: 510000, best: false },
+      { name: "Tri Ibadah 19GB / 30 Hari", price: 650000, best: false },
+    ],
+    XL_AXIS_SMARTFREN: [
+      { name: "XL Umroh 6GB / 45 Hari", price: 275000, best: false },
+      { name: "XL Umroh 10GB / 15 Hari", price: 395000, best: true },
+      { name: "Axis Mabrur 6GB / 10 Hari", price: 250000, best: false },
+      { name: "Axis Mabrur 10GB / 15 Hari", price: 350000, best: true },
+      { name: "Axis Mabrur 10GB / 20 Hari", price: 375000, best: false },
+      { name: "Smartfren Umroh 7GB / 14 Hari", price: 345000, best: true },
+      { name: "Smartfren Umroh 15GB / 30 Hari", price: 475000, best: false },
+      { name: "Smartfren Umroh 18GB / 45 Hari", price: 555000, best: false },
+    ],
+  };
+  // =======================================================================
+
+  let PACKAGES = FALLBACK_PACKAGES;
+  const pkgStatus = document.getElementById('pkgStatus');
+
+  // Kolom A:E sheet "Paket" -> Group, Nama Paket, Harga, Best Seller, Status
+  function isTrueVal_(v){
+    const s = String(v || '').trim().toLowerCase();
+    return s === 'true' || s === 'ya' || s === '1';
+  }
+
+  async function loadPackages(){
+    if (!CONFIG.sheetId){
+      pkgStatus.textContent = '';
+      return;
+    }
+    pkgStatus.textContent = 'Memuat harga terbaru...';
+    try{
+      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.sheetNamaPaket)}&headers=1`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Sheet tidak bisa diakses (cek pengaturan share)');
+      const text = await res.text();
+
+      // Respons gviz dibungkus: google.visualization.Query.setResponse({...});
+      const jsonText = text.substring(text.indexOf('(') + 1, text.lastIndexOf(')'));
+      const data = JSON.parse(jsonText);
+      const rows = data.table.rows || [];
+
+      const grouped = { TELKOMSEL: [], INDOSAT_TRI: [], XL_AXIS_SMARTFREN: [] };
+
+      rows.forEach(row => {
+        const c = row.c || [];
+        const group = c[0] && c[0].v ? String(c[0].v).trim() : '';
+        const name  = c[1] && c[1].v ? String(c[1].v).trim() : '';
+        const price = c[2] && c[2].v ? Number(c[2].v) : 0;
+        const best  = c[3] ? isTrueVal_(c[3].v) : false;
+        const status= c[4] && c[4].v ? String(c[4].v).trim().toLowerCase() : '';
+
+        if (!group || !name) return;
+        if (status && status !== 'aktif') return; // hanya tampilkan yang berstatus "Aktif"
+        if (!grouped[group]) return; // lewati grup yang tidak dikenal
+
+        grouped[group].push({ name, price, best });
+      });
+
+      if (grouped.TELKOMSEL.length || grouped.INDOSAT_TRI.length || grouped.XL_AXIS_SMARTFREN.length){
+        PACKAGES = grouped;
+        pkgStatus.textContent = '✓ Harga terbaru dari spreadsheet';
+      } else {
+        pkgStatus.textContent = 'Memakai data cadangan (sheet "Paket" kosong / belum ada baris Aktif)';
+      }
+    }catch(e){
+      pkgStatus.textContent = 'Memakai data cadangan (sheet belum bisa diakses — cek share link)';
+    }
+    // refresh dropdown paket kalau grup sudah dipilih
+    if (groupSel.value) groupSel.dispatchEvent(new Event('change'));
+  }
+
+  document.getElementById('bankName').textContent = CONFIG.bankName;
+  document.getElementById('accNumber').textContent = CONFIG.bankAccountDisplay;
+  document.getElementById('copyAcc').setAttribute('data-copy', CONFIG.bankAccountRaw);
+
+  const rupiah = n => 'Rp ' + n.toLocaleString('id-ID');
+
+  const groupSel = document.getElementById('operatorGroup');
+  const paketWrap = document.getElementById('paketWrap');
+  const paketSel = document.getElementById('paket');
+
+  groupSel.addEventListener('change', () => {
+    const list = PACKAGES[groupSel.value] || [];
+    paketSel.innerHTML = '<option value="">Pilih paket</option>' +
+      list.map((p, i) => `<option value="${i}" ${p.best ? 'class="best"' : ''}>${p.name} — ${rupiah(p.price)}${p.best ? ' ★' : ''}</option>`).join('');
+    paketWrap.style.display = list.length ? 'block' : 'none';
+  });
+
+  function selectedPackage(){
+    const list = PACKAGES[groupSel.value] || [];
+    const idx = paketSel.value;
+    return (idx !== '' && list[idx]) ? list[idx] : null;
+  }
+
+  // ---- Step navigation ----
+  const step1 = document.getElementById('step1');
+  const step2 = document.getElementById('step2');
+  const dot1 = document.getElementById('dot1');
+  const dot2 = document.getElementById('dot2');
+
+  document.getElementById('btnNext').addEventListener('click', () => {
+    const wa = document.getElementById('wa').value.trim();
+    const nama = document.getElementById('nama').value.trim();
+    const hp = document.getElementById('hpRoaming').value.trim();
+    const tgl = document.getElementById('tanggal').value;
+    const pkg = selectedPackage();
+
+    if (!wa || !nama || !hp || !tgl || !pkg){
+      alert('Mohon lengkapi semua data wajib (*), termasuk pilih operator dan paket.');
+      return;
+    }
+
+    document.getElementById('sumNama').textContent = nama;
+    document.getElementById('sumPaket').textContent = pkg.name;
+    document.getElementById('sumHp').textContent = hp;
+    document.getElementById('sumTgl').textContent = new Date(tgl).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+    document.getElementById('sumHarga').textContent = rupiah(pkg.price);
+
+    step1.style.display = 'none';
+    step2.style.display = 'block';
+    dot1.classList.remove('active');
+    dot2.classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  document.getElementById('btnBack').addEventListener('click', () => {
+    step2.style.display = 'none';
+    step1.style.display = 'block';
+    dot2.classList.remove('active');
+    dot1.classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  // ---- Copy rekening ----
+  const copyBtn = document.getElementById('copyAcc');
+  copyBtn.addEventListener('click', async () => {
+    const val = copyBtn.getAttribute('data-copy');
+    try{ await navigator.clipboard.writeText(val); }
+    catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = val; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+    }
+    copyBtn.textContent = 'Tersalin ✓';
+    copyBtn.classList.add('copied');
+    setTimeout(()=>{ copyBtn.textContent='Salin'; copyBtn.classList.remove('copied'); }, 2000);
+  });
+
+  // ---- Salin nomor e-wallet ----
+  const EWALLET_PHONE = "081295914051";
+  const copyEwallet = document.getElementById('copyEwallet');
+  copyEwallet.addEventListener('click', async () => {
+    const val = copyEwallet.getAttribute('data-copy');
+    try{ await navigator.clipboard.writeText(val); }
+    catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = val; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+    }
+    copyEwallet.textContent = 'Tersalin ✓';
+    copyEwallet.classList.add('copied');
+    setTimeout(()=>{ copyEwallet.textContent='Salin'; copyEwallet.classList.remove('copied'); }, 2000);
+  });
+
+  // ---- File picker ----
+  const fileDrop = document.getElementById('fileDrop');
+  const fileInput = document.getElementById('fileInput');
+  fileDrop.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length){
+      fileDrop.textContent = '✅ ' + fileInput.files[0].name;
+      fileDrop.classList.add('has-file');
+    }
+  });
+
+  // ---- Kirim konfirmasi: catat ke spreadsheet + buka WhatsApp ----
+  document.getElementById('btnWa').addEventListener('click', async () => {
+    const wa = document.getElementById('wa').value.trim();
+    const nama = document.getElementById('nama').value.trim();
+    const hp = document.getElementById('hpRoaming').value.trim();
+    const tgl = document.getElementById('tanggal').value;
+    const pkg = selectedPackage();
+    if (!pkg) return;
+
+    const orderId = 'UMR-' + Date.now().toString().slice(-6);
+    const tglFmt = new Date(tgl).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+
+    if (CONFIG.scriptUrl){
+      try{
+        await fetch(CONFIG.scriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // hindari CORS preflight
+          body: JSON.stringify({
+            wa, nama, hpRoaming: hp, tanggal: tgl,
+            operatorGroup: groupSel.value, paketNama: pkg.name, harga: pkg.price, orderId
+          })
+        });
+      }catch(e){ /* tetap lanjut kirim WA walau pencatatan gagal */ }
+    }
+
+    const msg =
+`Assalamu'alaikum, saya ingin konfirmasi pesanan Pulsa Internet Umroh-Ku:
+
+Kode Pesanan: ${orderId}
+No. WhatsApp: ${wa}
+Nama Lengkap: ${nama}
+No. HP diisi paket: ${hp}
+Jadwal Keberangkatan: ${tglFmt}
+Paket: ${pkg.name}
+Total Bayar: ${rupiah(pkg.price)}
+
+Bukti transfer akan saya lampirkan setelah ini. Terima kasih.`;
+
+    window.open(`https://wa.me/${CONFIG.adminWhatsApp}?text=${encodeURIComponent(msg)}`, '_blank');
+  });
+
+  loadPackages();
+</script>
+</body>
+</html>
