@@ -198,7 +198,7 @@
     // Isi dengan Web App URL Apps Script Anda (lihat panduan Code.gs).
     // Dipakai untuk MENCATAT pesanan yang masuk ke sheet "Pesanan".
     // Biarkan kosong "" jika belum siap -- konfirmasi WA tetap jalan, hanya pencatatan yang dilewati.
-    scriptUrl: "https://script.google.com/macros/s/AKfycbyFjLGLfiAYzVjVfORdXJsruoaQKjy0XoGpA_QMLhxKjsDnleK_wGj0uBADY3QzGB6dJw/exec"
+    scriptUrl: "https://script.google.com/macros/s/AKfycbyukSCN-vt_XkiHGl9o_yCm978qnKOumrB4NSewJZUtoExKzT0TpNLuAnyL3IvhgKy_sA/exec"
   };
 
   // Data cadangan (dipakai jika scriptUrl kosong / spreadsheet belum bisa diakses)
@@ -393,7 +393,7 @@
     }
   });
 
-  // ---- Kirim konfirmasi: catat ke spreadsheet + buka WhatsApp ----
+  // ---- Kirim konfirmasi: catat ke spreadsheet (via GET, lebih reliable dari POST) + buka WhatsApp ----
   document.getElementById('btnWa').addEventListener('click', async () => {
     const wa = document.getElementById('wa').value.trim();
     const nama = document.getElementById('nama').value.trim();
@@ -407,14 +407,12 @@
 
     if (CONFIG.scriptUrl){
       try{
-        await fetch(CONFIG.scriptUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // hindari CORS preflight
-          body: JSON.stringify({
-            wa, nama, hpRoaming: hp, tanggal: tgl,
-            operatorGroup: groupSel.value, paketNama: pkg.name, harga: pkg.price, orderId
-          })
+        const params = new URLSearchParams({
+          action: 'addOrder',
+          wa, nama, hpRoaming: hp, tanggal: tgl,
+          operatorGroup: groupSel.value, paketNama: pkg.name, harga: pkg.price, orderId
         });
+        await fetch(CONFIG.scriptUrl + '?' + params.toString());
       }catch(e){ /* tetap lanjut kirim WA walau pencatatan gagal */ }
     }
 
