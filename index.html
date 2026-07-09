@@ -161,10 +161,12 @@
         <label>Bukti Transfer</label>
         <div class="file-drop" id="fileDrop">📎 Ketuk untuk pilih foto/screenshot bukti transfer</div>
         <input type="file" id="fileInput" accept="image/*">
+        <button class="btn btn-primary" id="btnKirimBukti" style="margin-top:12px;" disabled>Kirim Bukti Bayar</button>
+        <div class="pkg-loading" id="buktiStatus"></div>
       </div>
       <button class="btn btn-wa" id="btnWa">Kirim Konfirmasi via WhatsApp</button>
       <button class="btn btn-ghost" id="btnBack">← Kembali ubah data</button>
-      <p class="note">Bukti transfer otomatis diunggah dan pesanan tercatat ke spreadsheet saat tombol ini ditekan.</p>
+      <p class="note">1) Pilih foto bukti transfer, lalu klik "Kirim Bukti Bayar" untuk mengunggah &amp; mencatat ke spreadsheet. 2) Setelah berhasil, klik "Kirim Konfirmasi via WhatsApp" untuk lanjut chat admin.</p>
     </div>
   </div>
 
@@ -360,6 +362,9 @@
   // ---- File picker: kompres gambar & simpan sebagai base64 ----
   let buktiDataUrl = null;   // data:image/jpeg;base64,....
   let buktiFileName = '';
+  let currentOrderId = null;
+  let orderSubmitted = false;
+  let submittedBuktiUrl = '';
 
   function compressImage(file, maxWidth = 1280, quality = 0.72){
     return new Promise((resolve, reject) => {
@@ -387,24 +392,84 @@
 
   const fileDrop = document.getElementById('fileDrop');
   const fileInput = document.getElementById('fileInput');
+  const btnKirimBukti = document.getElementById('btnKirimBukti');
+  const buktiStatus = document.getElementById('buktiStatus');
+
   fileDrop.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', async () => {
     if (!fileInput.files.length) return;
     const file = fileInput.files[0];
     fileDrop.textContent = '⏳ Memproses ' + file.name + ' ...';
     fileDrop.classList.remove('has-file');
+    btnKirimBukti.disabled = true;
+    orderSubmitted = false;
+    submittedBuktiUrl = '';
+    buktiStatus.textContent = '';
     try{
       buktiDataUrl = await compressImage(file);
       buktiFileName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
       fileDrop.textContent = '✅ ' + file.name;
       fileDrop.classList.add('has-file');
+      btnKirimBukti.disabled = false;
+      btnKirimBukti.textContent = 'Kirim Bukti Bayar';
     }catch(e){
       buktiDataUrl = null;
       fileDrop.textContent = '⚠️ Gagal memproses gambar, coba pilih ulang';
     }
   });
 
-  // ---- Kirim konfirmasi: upload bukti transfer + catat ke spreadsheet + buka WhatsApp ----
+  // ---- Kirim Bukti Bayar: upload gambar + catat pesanan ke spreadsheet ----
+  btnKirimBukti.addEventListener('click', async () => {
+    if (!buktiDataUrl){
+      alert('Pilih foto bukti transfer terlebih dahulu.');
+      return;
+    }
+    const wa = document.getElementById('wa').value.trim();
+    const nama = document.getElementById('nama').value.trim();
+    const hp = document.getElementById('hpRoaming').value.trim();
+    const tgl = document.getElementById('tanggal').value;
+    const pkg = selectedPackage();
+    if (!wa || !nama || !hp || !tgl || !pkg){
+      alert('Data pesanan belum lengkap, mohon kembali dan lengkapi dulu.');
+      return;
+    }
+    if (!currentOrderId) currentOrderId = 'UMR-' + Date.now().toString().slice(-6);
+
+    btnKirimBukti.disabled = true;
+    btnKirimBukti.textContent = 'Mengunggah bukti transfer...';
+    buktiStatus.textContent = '';
+
+    try{
+      const payload = {
+        action: 'addOrder',
+        orderId: currentOrderId, wa, nama, hpRoaming: hp, tanggal: tgl,
+        operatorGroup: groupSel.value, paketNama: pkg.name, harga: pkg.price,
+        buktiBase64: buktiDataUrl,
+        buktiMime: buktiDataUrl.substring(5, buktiDataUrl.indexOf(';')),
+        buktiFileName: buktiFileName || 'bukti.jpg'
+      };
+      const res = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
+      const result = await res.json();
+      if (result.ok){
+        orderSubmitted = true;
+        submittedBuktiUrl = result.buktiUrl || '';
+        btnKirimBukti.textContent = '✅ Bukti Terkirim';
+        buktiStatus.textContent = 'Bukti transfer berhasil diunggah & tercatat. Silakan lanjut ke WhatsApp.';
+      } else {
+        btnKirimBukti.disabled = false;
+        btnKirimBukti.textContent = 'Kirim Bukti Bayar';
+        buktiStatus.textContent = '⚠️ Gagal mengirim bukti transfer, coba lagi.';
+        console.error('Gagal mencatat pesanan:', result.error);
+      }
+    }catch(e){
+      btnKirimBukti.disabled = false;
+      btnKirimBukti.textContent = 'Kirim Bukti Bayar';
+      buktiStatus.textContent = '⚠️ Gagal terhubung ke server, coba lagi.';
+      console.error('Gagal hubungi script:', e);
+    }
+  });
+
+  // ---- Kirim konfirmasi via WhatsApp (dipakai SETELAH bukti transfer terkirim) ----
   document.getElementById('btnWa').addEventListener('click', async () => {
     const wa = document.getElementById('wa').value.trim();
     const nama = document.getElementById('nama').value.trim();
@@ -413,49 +478,20 @@
     const pkg = selectedPackage();
     if (!pkg) return;
 
-    const btnWa = document.getElementById('btnWa');
-    const originalText = btnWa.textContent;
-    const orderId = 'UMR-' + Date.now().toString().slice(-6);
-    const tglFmt = new Date(tgl).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
-
-    let buktiUrl = '';
-
-    if (CONFIG.scriptUrl){
-      btnWa.disabled = true;
-      btnWa.textContent = buktiDataUrl ? 'Mengunggah bukti transfer...' : 'Mengirim...';
-      try{
-        const payload = {
-          action: 'addOrder',
-          orderId, wa, nama, hpRoaming: hp, tanggal: tgl,
-          operatorGroup: groupSel.value, paketNama: pkg.name, harga: pkg.price
-        };
-        if (buktiDataUrl){
-          payload.buktiBase64 = buktiDataUrl;
-          payload.buktiMime = buktiDataUrl.substring(5, buktiDataUrl.indexOf(';'));
-          payload.buktiFileName = buktiFileName || 'bukti.jpg';
-        }
-        // Pakai POST body text/plain (tanpa header custom) supaya tidak kena CORS preflight
-        const res = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
-        const result = await res.json();
-        if (result.ok){
-          buktiUrl = result.buktiUrl || '';
-        } else {
-          console.error('Gagal mencatat pesanan:', result.error);
-          alert('Peringatan: pesanan mungkin belum tercatat otomatis. Mohon info admin manual saat chat WA.');
-        }
-      }catch(e){
-        console.error('Gagal hubungi script:', e);
-        alert('Peringatan: pesanan mungkin belum tercatat otomatis. Mohon info admin manual saat chat WA.');
-      }finally{
-        btnWa.disabled = false;
-        btnWa.textContent = originalText;
-      }
+    // Kalau user sudah pilih foto tapi belum klik "Kirim Bukti Bayar", minta klik dulu.
+    if (buktiDataUrl && !orderSubmitted){
+      alert('Mohon klik tombol "Kirim Bukti Bayar" terlebih dahulu sebelum konfirmasi via WhatsApp.');
+      return;
     }
 
-    const msg =
+    if (!currentOrderId) currentOrderId = 'UMR-' + Date.now().toString().slice(-6);
+    const tglFmt = new Date(tgl).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+
+    function buildMsgAndOpen(buktiUrl){
+      const msg =
 `Assalamu'alaikum, saya ingin konfirmasi pesanan Pulsa Internet Umroh-Ku:
 
-Kode Pesanan: ${orderId}
+Kode Pesanan: ${currentOrderId}
 No. WhatsApp: ${wa}
 Nama Lengkap: ${nama}
 No. HP diisi paket: ${hp}
@@ -464,8 +500,35 @@ Paket: ${pkg.name}
 Total Bayar: ${rupiah(pkg.price)}
 ${buktiUrl ? 'Bukti Transfer: ' + buktiUrl + '\n' : ''}
 Terima kasih.`;
+      return `https://wa.me/${CONFIG.adminWhatsApp}?text=${encodeURIComponent(msg)}`;
+    }
 
-    window.open(`https://wa.me/${CONFIG.adminWhatsApp}?text=${encodeURIComponent(msg)}`, '_blank');
+    // Kasus 1: bukti transfer sudah dikirim sebelumnya -> langsung buka WA (klik langsung, tidak diblokir popup).
+    if (orderSubmitted){
+      window.open(buildMsgAndOpen(submittedBuktiUrl), '_blank');
+      return;
+    }
+
+    // Kasus 2: tidak ada foto sama sekali (bukti dianggap opsional) -> catat pesanan dulu tanpa bukti, baru buka WA.
+    const waTab = window.open('about:blank', '_blank'); // dibuka duluan supaya tidak diblokir popup blocker
+    if (CONFIG.scriptUrl){
+      try{
+        const payload = {
+          action: 'addOrder',
+          orderId: currentOrderId, wa, nama, hpRoaming: hp, tanggal: tgl,
+          operatorGroup: groupSel.value, paketNama: pkg.name, harga: pkg.price
+        };
+        await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
+      }catch(e){
+        console.error('Gagal hubungi script:', e);
+      }
+    }
+    const waUrl = buildMsgAndOpen('');
+    if (waTab && !waTab.closed){
+      waTab.location.href = waUrl;
+    } else {
+      window.open(waUrl, '_blank');
+    }
   });
 
   loadPackages();
