@@ -45,6 +45,24 @@
 
   .pkg-loading{ font-size:12.5px; color:var(--muted); margin-top:6px; }
 
+  .provider-badge{ display:none; align-items:center; gap:6px; margin-top:8px; font-size:12.5px; font-weight:700; padding:5px 10px; border-radius:20px; width:fit-content; }
+  .provider-badge .dot{ width:8px; height:8px; border-radius:50%; }
+  .provider-badge.show{ display:inline-flex; }
+  .provider-tsel{ background:#FDECEC; color:#C0292E; }
+  .provider-tsel .dot{ background:#C0292E; }
+  .provider-isat{ background:#FFF8DB; color:#8A6D00; }
+  .provider-isat .dot{ background:#E0B400; }
+  .provider-xl{ background:#E9F3FF; color:#0B5FC7; }
+  .provider-xl .dot{ background:#0B5FC7; }
+  .provider-axis{ background:#F3EBFF; color:#6C2FBF; }
+  .provider-axis .dot{ background:#6C2FBF; }
+  .provider-tri{ background:#FFF8DB; color:#8A6D00; }
+  .provider-tri .dot{ background:#E0B400; }
+  .provider-smart{ background:#FFF1E5; color:#C4610A; }
+  .provider-smart .dot{ background:#C4610A; }
+  .provider-unknown{ background:#F0F0F0; color:#6C6791; }
+  .provider-unknown .dot{ background:#6C6791; }
+
   .summary-row{ display:flex; justify-content:space-between; align-items:baseline; padding:8px 0; font-size:14px; }
   .summary-row + .summary-row{ border-top:1px dashed var(--line); }
   .summary-row .label{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; font-weight:600; margin:0; }
@@ -106,12 +124,13 @@
         <input type="text" id="nama" placeholder="Jawaban Anda">
       </div>
       <div class="field">
-        <label>Nomor HP yang di isi Paket Roaming Umroh/Haji <span class="req">*</span></label>
-        <input type="tel" id="hpRoaming" placeholder="Jawaban Anda" inputmode="numeric">
-      </div>
-      <div class="field">
         <label>Jadwal Keberangkatan <span class="req">*</span></label>
         <input type="date" id="tanggal">
+      </div>
+      <div class="field">
+        <label>Nomor HP yang di isi Paket Roaming Umroh/Haji <span class="req">*</span></label>
+        <input type="tel" id="hpRoaming" placeholder="Jawaban Anda" inputmode="numeric">
+        <div class="provider-badge" id="providerBadge"><span class="dot"></span><span id="providerName">-</span></div>
       </div>
       <div class="field">
         <label>Pilih Operator Seluler Anda: <span class="req">*</span></label>
@@ -304,6 +323,77 @@
     const idx = paketSel.value;
     return (idx !== '' && list[idx]) ? list[idx] : null;
   }
+
+  const waInput = document.getElementById('wa');
+
+  function normalizeIdPhone(raw){
+    let s = String(raw || '').trim().replace(/[\s\-\.]/g, '');
+    if (s.startsWith('+62')) s = '0' + s.slice(3);
+    else if (s.startsWith('62')) s = '0' + s.slice(2);
+    return s;
+  }
+
+  // ---- Deteksi provider dari Nomor HP Roaming ----
+  const PROVIDER_PREFIXES = {
+    TELKOMSEL: ['0811','0812','0813','0821','0822','0823','0851','0852','0853'],
+    INDOSAT:   ['0814','0815','0816','0855','0856','0857','0858'],
+    XL:        ['0817','0818','0819','0859','0877','0878'],
+    AXIS:      ['0831','0832','0833','0838'],
+    TRI:       ['0895','0896','0897','0898','0899'],
+    SMARTFREN: ['0881','0882','0883','0884','0885','0886','0887','0888','0889'],
+  };
+
+  const PROVIDER_META = {
+    TELKOMSEL: { label: 'Telkomsel', cls: 'provider-tsel', group: 'TELKOMSEL' },
+    INDOSAT:   { label: 'Indosat Ooredoo',    cls: 'provider-isat', group: 'INDOSAT_TRI' },
+    XL:        { label: 'XL',        cls: 'provider-xl',   group: 'XL_AXIS_SMARTFREN' },
+    AXIS:      { label: 'Axis',      cls: 'provider-axis', group: 'XL_AXIS_SMARTFREN' },
+    TRI:       { label: 'Tri (3)',   cls: 'provider-tri',  group: 'INDOSAT_TRI' },
+    SMARTFREN: { label: 'Smartfren', cls: 'provider-smart',group: 'XL_AXIS_SMARTFREN' },
+  };
+
+  function detectProvider(raw){
+    const s = normalizeIdPhone(raw);
+    if (s.length < 4) return null;
+    const prefix4 = s.slice(0, 4);
+    for (const key in PROVIDER_PREFIXES){
+      if (PROVIDER_PREFIXES[key].includes(prefix4)) return key;
+    }
+    return null;
+  }
+
+  const hpRoamingInput = document.getElementById('hpRoaming');
+  const providerBadge = document.getElementById('providerBadge');
+  const providerNameEl = document.getElementById('providerName');
+  const ALL_PROVIDER_CLASSES = ['provider-tsel','provider-isat','provider-xl','provider-axis','provider-tri','provider-smart','provider-unknown'];
+
+  hpRoamingInput.addEventListener('input', () => {
+    const val = hpRoamingInput.value.trim();
+    const s = normalizeIdPhone(val);
+
+    ALL_PROVIDER_CLASSES.forEach(c => providerBadge.classList.remove(c));
+
+    if (s.length < 4){
+      providerBadge.classList.remove('show');
+      return;
+    }
+
+    const key = detectProvider(val);
+    if (key){
+      const meta = PROVIDER_META[key];
+      providerNameEl.textContent = '📶 ' + meta.label;
+      providerBadge.classList.add(meta.cls, 'show');
+
+      // Bantu isi otomatis dropdown Operator kalau belum dipilih user
+      if (!groupSel.value){
+        groupSel.value = meta.group;
+        groupSel.dispatchEvent(new Event('change'));
+      }
+    } else if (s.length >= 4) {
+      providerNameEl.textContent = 'Provider tidak dikenali';
+      providerBadge.classList.add('provider-unknown', 'show');
+    }
+  });
 
   // ---- Step navigation ----
   const step1 = document.getElementById('step1');
