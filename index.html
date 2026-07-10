@@ -116,18 +116,14 @@
   .validation-summary ul{ margin:0; padding-left:18px; }
   .validation-summary li{ margin-top:2px; }
 
-  #step2{ display:none; }
-
-  .modal-overlay{ position:fixed; inset:0; background:rgba(33,28,59,.55); display:none; align-items:center; justify-content:center; padding:20px; z-index:1000; }
+  .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(33,28,59,.55); z-index:1000; align-items:center; justify-content:center; padding:20px; }
   .modal-overlay.show{ display:flex; }
-  .modal-box{ background:#fff; border-radius:14px; padding:22px; max-width:380px; width:100%; box-shadow:0 10px 40px rgba(0,0,0,.25); }
-  .modal-icon{ font-size:32px; text-align:center; margin-bottom:8px; }
-  .modal-title{ font-size:16px; font-weight:700; color:var(--indigo-deep); text-align:center; margin:0 0 8px; }
-  .modal-text{ font-size:13.5px; color:var(--muted); text-align:center; line-height:1.55; margin:0 0 18px; }
-  .modal-btn{ width:100%; padding:13px; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; margin-top:10px; }
-  .modal-btn-primary{ background:var(--indigo); color:#fff; }
-  .modal-btn-wa{ background:var(--green); color:#fff; }
-  .modal-btn-cancel{ background:transparent; color:var(--muted); font-weight:600; padding:8px; }
+  .modal-box{ background:#fff; border-radius:14px; max-width:380px; width:100%; padding:22px; }
+  .modal-icon{ font-size:28px; margin-bottom:8px; }
+  .modal-title{ font-weight:700; font-size:15.5px; margin:0 0 8px; color:var(--indigo-deep); }
+  .modal-text{ font-size:13.5px; color:var(--muted); line-height:1.55; margin:0 0 18px; }
+
+  #step2{ display:none; }
 </style>
 </head>
 <body>
@@ -241,15 +237,13 @@
   <footer>Create By Muzarqo Digital</footer>
 </div>
 
-<!-- ===================== MODAL: PENGINGAT BUKTI BAYAR BELUM UPLOAD ===================== -->
 <div class="modal-overlay" id="buktiReminderModal">
   <div class="modal-box">
     <div class="modal-icon">📎</div>
-    <p class="modal-title">Bukti Transfer Belum Diupload</p>
-    <p class="modal-text">Anda belum mengupload bukti transfer pembayaran. Upload dulu agar admin bisa langsung memverifikasi, atau lanjut kirim konfirmasi ke WhatsApp tanpa bukti (bisa Anda kirim menyusul di chat).</p>
-    <button class="modal-btn modal-btn-primary" id="modalBtnUpload">📎 Upload Bukti Bayar</button>
-    <button class="modal-btn modal-btn-wa" id="modalBtnSkip">Kirim Bukti Bayar ke WhatsApp</button>
-    <button class="modal-btn modal-btn-cancel" id="modalBtnCancel">Batal</button>
+    <p class="modal-title">Bukti Pembayaran Belum Terkirim</p>
+    <p class="modal-text" id="buktiReminderText">Anda belum mengunggah bukti transfer.</p>
+    <button class="btn btn-primary" id="btnReminderUpload" style="margin-top:0;">📎 Upload Bukti Bayar</button>
+    <button class="btn btn-ghost" id="btnReminderSkip">Lanjutkan Tanpa Bukti →</button>
   </div>
 </div>
 
@@ -861,8 +855,21 @@
     }
   });
 
-  // ---- Kirim konfirmasi via WhatsApp (dipakai SETELAH bukti transfer terkirim) ----
-  function buildMsgAndOpen(wa, nama, hp, tglFmt, pkg, buktiUrl){
+  // ---- Helper bersama: baca data form terkini & bangun pesan WA ----
+  function getOrderFormData(){
+    return {
+      wa: document.getElementById('wa').value.trim(),
+      nama: document.getElementById('nama').value.trim(),
+      hp: document.getElementById('hpRoaming').value.trim(),
+      tgl: document.getElementById('tanggal').value,
+      pkg: selectedPackage()
+    };
+  }
+
+  function buildWaUrl(buktiUrl){
+    const { wa, nama, hp, tgl, pkg } = getOrderFormData();
+    if (!pkg) return null;
+    const tglFmt = new Date(tgl).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
     const msg =
 `Assalamu'alaikum, saya ingin konfirmasi pesanan Pulsa Internet Baitullah-Ku:
 
@@ -878,20 +885,14 @@ Terima kasih.`;
     return `https://wa.me/${CONFIG.adminWhatsApp}?text=${encodeURIComponent(msg)}`;
   }
 
-  // Dipanggil saat user memilih "Lanjut Tanpa Bukti ke WhatsApp" pada modal pengingat.
-  // Mencatat pesanan tanpa bukti transfer, lalu membuka WhatsApp.
+  // Kirim pesanan TANPA bukti transfer (dipilih user lewat modal pengingat), lalu buka WA.
   async function proceedWithoutBukti(){
-    const wa = document.getElementById('wa').value.trim();
-    const nama = document.getElementById('nama').value.trim();
-    const hp = document.getElementById('hpRoaming').value.trim();
-    const tgl = document.getElementById('tanggal').value;
-    const pkg = selectedPackage();
+    const { wa, nama, hp, tgl, pkg } = getOrderFormData();
     if (!pkg) return;
-
     if (!currentOrderId) currentOrderId = generateOrderId();
-    const tglFmt = new Date(tgl).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
 
-    const waTab = window.open('about:blank', '_blank'); // dibuka duluan supaya tidak diblokir popup blocker
+    // Tab dibuka SEKARANG (masih dalam konteks klik tombol modal) supaya tidak diblokir popup blocker.
+    const waTab = window.open('about:blank', '_blank');
     if (CONFIG.scriptUrl){
       try{
         const payload = {
@@ -904,7 +905,7 @@ Terima kasih.`;
         console.error('Gagal hubungi script (order tetap lanjut ke WA):', e);
       }
     }
-    const waUrl = buildMsgAndOpen(wa, nama, hp, tglFmt, pkg, '');
+    const waUrl = buildWaUrl('');
     if (waTab && !waTab.closed){
       waTab.location.href = waUrl;
     } else {
@@ -912,56 +913,67 @@ Terima kasih.`;
     }
   }
 
+  // ---- Modal pengingat: bukti bayar belum terkirim ----
   const buktiReminderModal = document.getElementById('buktiReminderModal');
+  const buktiReminderText = document.getElementById('buktiReminderText');
+  const btnReminderUpload = document.getElementById('btnReminderUpload');
+  const btnReminderSkip = document.getElementById('btnReminderSkip');
 
-  function closeBuktiReminderModal(){
+  function showBuktiReminder(){
+    // Kalimat pengingat disesuaikan tergantung situasi: sudah pilih foto tapi belum dikirim, atau belum pilih sama sekali.
+    if (buktiDataUrl){
+      buktiReminderText.textContent = 'Foto/PDF bukti transfer sudah dipilih tapi belum dikirim. Kirim sekarang supaya pesanan langsung tercatat dengan bukti, atau lanjutkan tanpa bukti dan kirim konfirmasi ke WhatsApp.';
+      btnReminderUpload.textContent = '📤 Kirim Bukti Sekarang';
+    } else {
+      buktiReminderText.textContent = 'Anda belum mengunggah bukti transfer. Upload dulu supaya admin bisa memverifikasi pembayaran lebih cepat, atau lanjutkan tanpa bukti dan kirim konfirmasi ke WhatsApp sekarang.';
+      btnReminderUpload.textContent = '📎 Upload Bukti Bayar';
+    }
+    buktiReminderModal.classList.add('show');
+  }
+
+  function hideBuktiReminder(){
     buktiReminderModal.classList.remove('show');
   }
 
-  // Pilihan 1: user mau upload bukti bayar dulu -> tutup modal, arahkan ke area upload.
-  document.getElementById('modalBtnUpload').addEventListener('click', () => {
-    closeBuktiReminderModal();
-    fileDrop.scrollIntoView({ behavior:'smooth', block:'center' });
-    fileDrop.focus();
+  btnReminderUpload.addEventListener('click', () => {
+    hideBuktiReminder();
+    if (buktiDataUrl){
+      // Foto sudah dipilih -> langsung kirim bukti secara otomatis.
+      btnKirimBukti.click();
+    } else {
+      // Belum ada foto sama sekali -> arahkan ke area upload.
+      fileDrop.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      fileDrop.focus();
+    }
   });
 
-  // Pilihan 2: user memilih lanjut tanpa bukti -> catat pesanan tanpa bukti & buka WhatsApp.
-  document.getElementById('modalBtnSkip').addEventListener('click', () => {
-    closeBuktiReminderModal();
+  btnReminderSkip.addEventListener('click', () => {
+    hideBuktiReminder();
     proceedWithoutBukti();
   });
 
-  // Batal: tutup modal saja, tidak melakukan apa-apa.
-  document.getElementById('modalBtnCancel').addEventListener('click', closeBuktiReminderModal);
   buktiReminderModal.addEventListener('click', (e) => {
-    if (e.target === buktiReminderModal) closeBuktiReminderModal();
+    if (e.target === buktiReminderModal) hideBuktiReminder();
   });
 
-  document.getElementById('btnWa').addEventListener('click', async () => {
-    const wa = document.getElementById('wa').value.trim();
-    const nama = document.getElementById('nama').value.trim();
-    const hp = document.getElementById('hpRoaming').value.trim();
-    const tgl = document.getElementById('tanggal').value;
-    const pkg = selectedPackage();
-    if (!pkg) return;
-
-    // Kalau user sudah pilih foto tapi belum klik "Kirim Bukti Bayar", minta klik dulu.
-    if (buktiDataUrl && !orderSubmitted){
-      alert('Mohon klik tombol "Kirim Bukti Bayar" terlebih dahulu sebelum konfirmasi via WhatsApp.');
+  // ---- Kirim konfirmasi via WhatsApp ----
+  document.getElementById('btnWa').addEventListener('click', () => {
+    const { pkg } = getOrderFormData();
+    if (!pkg){
+      alert('Mohon lengkapi data pesanan & pilih paket terlebih dahulu.');
       return;
     }
 
-    if (!currentOrderId) currentOrderId = generateOrderId();
-    const tglFmt = new Date(tgl).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
-
-    // Kasus 1: bukti transfer sudah dikirim sebelumnya -> langsung buka WA (klik langsung, tidak diblokir popup).
+    // Bukti transfer sudah terkirim sebelumnya -> langsung buka WA (klik langsung, tidak diblokir popup).
     if (orderSubmitted){
-      window.open(buildMsgAndOpen(wa, nama, hp, tglFmt, pkg, submittedBuktiUrl), '_blank');
+      if (!currentOrderId) currentOrderId = generateOrderId();
+      window.open(buildWaUrl(submittedBuktiUrl), '_blank');
       return;
     }
 
-    // Kasus 2: belum ada bukti transfer sama sekali -> tampilkan pengingat dulu, jangan langsung lanjut ke WA.
-    buktiReminderModal.classList.add('show');
+    // Bukti belum terkirim (baik belum pilih foto, atau sudah pilih tapi belum diklik "Kirim Bukti Bayar")
+    // -> tampilkan pengingat dengan pilihan yang relevan.
+    showBuktiReminder();
   });
 
   loadPackages();
