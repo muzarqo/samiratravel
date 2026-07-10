@@ -35,13 +35,27 @@
   .field:last-child{ margin-bottom:0; }
   input[type=text], input[type=tel], input[type=date], select{
     width:100%; padding:10px 2px; border:none; border-bottom:1.5px solid var(--line);
-    background:transparent; font-size:15px; color:var(--ink); font-family:inherit; outline:none;
+    background:transparent; font-size:16px; color:var(--ink); font-family:inherit; outline:none;
   }
   input::placeholder{ color:#A9A3C6; }
   input:focus, select:focus{ border-bottom-color:var(--indigo); }
   select{ padding:10px; border:1.5px solid var(--line); border-radius:8px; background:#fff; }
   select:focus{ border-color:var(--indigo); }
-  select option.best::after{ content:" ★ Best Seller"; }
+  .paket-cards{ display:flex; flex-direction:column; gap:10px; margin-top:4px; }
+  .paket-card{
+    border:1.5px solid var(--line); border-radius:10px; padding:12px 14px;
+    cursor:pointer; background:#fff; transition:border-color .15s, background .15s, box-shadow .15s;
+  }
+  .paket-card:hover{ border-color:#B8AEEA; }
+  .paket-card.selected{ border-color:var(--indigo); background:#F5F3FF; box-shadow:0 0 0 1px var(--indigo) inset; }
+  .paket-card-main{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .paket-card-name{ font-size:14px; font-weight:600; line-height:1.45; color:var(--ink); }
+  .paket-card-price{ font-size:14px; font-weight:700; color:var(--indigo-deep); white-space:nowrap; flex-shrink:0; }
+  .badge-best{
+    display:inline-block; margin-left:6px; font-size:10px; font-weight:800; letter-spacing:.02em;
+    background:linear-gradient(90deg,#FFD36E,#FFB020); color:#5B3A00; padding:2px 8px;
+    border-radius:20px; vertical-align:middle; white-space:nowrap;
+  }
 
   .pkg-loading{ font-size:12.5px; color:var(--muted); margin-top:6px; }
 
@@ -77,6 +91,7 @@
   .copy-btn.copied{ background:#9BDDB4; }
 
   .file-drop{ border:1.5px dashed var(--line); border-radius:10px; padding:16px; text-align:center; font-size:13px; color:var(--muted); cursor:pointer; background:#FBFAFF; }
+  .file-drop:focus-visible{ outline:2px solid var(--indigo); outline-offset:2px; }
   .file-drop.has-file{ border-color:var(--green); color:var(--green); font-weight:600; }
   input[type=file]{ display:none; }
 
@@ -90,7 +105,29 @@
   .note{ font-size:12px; color:var(--muted); margin-top:10px; line-height:1.5; }
   footer{ text-align:center; font-size:11.5px; color:var(--muted); margin:24px 16px 0; }
 
+  .field.has-error input, .field.has-error select{ border-color:#B23A3A; border-bottom-color:#B23A3A; }
+  .field.has-error label{ color:#B23A3A; }
+  .validation-summary{
+    display:none; background:#FDECEC; border:1px solid #F3B9B9; border-radius:10px;
+    padding:12px 14px; margin:14px 16px 0; font-size:13px; color:#8A2020;
+  }
+  .validation-summary.show{ display:block; }
+  .validation-summary strong{ display:block; margin-bottom:4px; }
+  .validation-summary ul{ margin:0; padding-left:18px; }
+  .validation-summary li{ margin-top:2px; }
+
   #step2{ display:none; }
+
+  .modal-overlay{ position:fixed; inset:0; background:rgba(33,28,59,.55); display:none; align-items:center; justify-content:center; padding:20px; z-index:1000; }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{ background:#fff; border-radius:14px; padding:22px; max-width:380px; width:100%; box-shadow:0 10px 40px rgba(0,0,0,.25); }
+  .modal-icon{ font-size:32px; text-align:center; margin-bottom:8px; }
+  .modal-title{ font-size:16px; font-weight:700; color:var(--indigo-deep); text-align:center; margin:0 0 8px; }
+  .modal-text{ font-size:13.5px; color:var(--muted); text-align:center; line-height:1.55; margin:0 0 18px; }
+  .modal-btn{ width:100%; padding:13px; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; margin-top:10px; }
+  .modal-btn-primary{ background:var(--indigo); color:#fff; }
+  .modal-btn-wa{ background:var(--green); color:#fff; }
+  .modal-btn-cancel{ background:transparent; color:var(--muted); font-weight:600; padding:8px; }
 </style>
 </head>
 <body>
@@ -116,36 +153,46 @@
       <p class="card-title">Langkah 1 — Data Pemesan</p>
 
       <div class="field">
-        <label>No. WhatsApp <span class="req">*</span></label>
+        <label for="wa">No. WhatsApp <span class="req">*</span></label>
         <input type="tel" id="wa" placeholder="Contoh: 08123456789" inputmode="numeric">
       </div>
       <div class="field">
-        <label>Nama Lengkap <span class="req">*</span></label>
+        <label for="nama">Nama Lengkap <span class="req">*</span></label>
         <input type="text" id="nama" placeholder="Jawaban Anda">
       </div>
       <div class="field">
-        <label>Jadwal Keberangkatan <span class="req">*</span></label>
+        <label for="tanggal">Jadwal Keberangkatan <span class="req">*</span></label>
         <input type="date" id="tanggal">
       </div>
       <div class="field">
-        <label>Nomor HP yang di isi Paket Roaming Umroh/Haji <span class="req">*</span></label>
+        <label for="hpRoaming">Nomor HP yang di isi Paket Roaming Umroh/Haji <span class="req">*</span></label>
         <input type="tel" id="hpRoaming" placeholder="Jawaban Anda" inputmode="numeric">
         <div class="provider-badge" id="providerBadge"><span class="dot"></span><span id="providerName">-</span></div>
       </div>
-      <div class="field">
-        <label>Pilih Operator Seluler Anda: <span class="req">*</span></label>
+      <div class="field" id="operatorFallbackWrap" style="display:none;">
+        <label for="operatorGroup">Provider tidak terdeteksi otomatis, pilih Operator Seluler manual: <span class="req">*</span></label>
         <select id="operatorGroup">
           <option value="">Pilih</option>
           <option value="TELKOMSEL">TELKOMSEL</option>
-          <option value="INDOSAT_TRI">INDOSAT / TRI (3)</option>
-          <option value="XL_AXIS_SMARTFREN">XL / AXIS / SMARTFREN</option>
+          <option value="INDOSAT">INDOSAT</option>
+          <option value="TRI">TRI (3)</option>
+          <option value="XL">XL</option>
+          <option value="AXIS">AXIS</option>
+          <option value="SMARTFREN">SMARTFREN</option>
         </select>
       </div>
       <div class="field" id="paketWrap" style="display:none;">
         <label>Pilih Paket <span class="req">*</span></label>
-        <select id="paket"></select>
+        <div class="paket-cards" id="paketCards"></div>
         <div class="pkg-loading" id="pkgStatus"></div>
       </div>
+    </div>
+
+    <p class="note" id="paketHint" style="margin:12px 16px 0;">📱 Isi nomor HP paket roaming yang valid, paket yang sesuai akan otomatis muncul.</p>
+
+    <div class="validation-summary" id="validationSummary">
+      <strong>Mohon lengkapi data berikut:</strong>
+      <ul id="validationList"></ul>
     </div>
 
     <button class="btn btn-primary" id="btnNext">Lanjut ke Pembayaran →</button>
@@ -178,19 +225,32 @@
       <p class="card-title">Upload &amp; Kirim Konfirmasi</p>
       <div class="field">
         <label>Bukti Transfer</label>
-        <div class="file-drop" id="fileDrop">📎 Ketuk untuk pilih foto/screenshot bukti transfer</div>
-        <input type="file" id="fileInput" accept="image/*">
+        <div class="file-drop" id="fileDrop" tabindex="0" role="button" aria-label="Upload bukti transfer, format JPG, PNG, atau PDF, maksimal 3MB">📎 Upload bukti transfer<br><span style="font-size:10.5px;opacity:.8;">Format: .jpg, .png, .pdf (max. 3MB)</span></div>
+        <img id="buktiPreview" alt="Preview bukti transfer" style="display:none; max-width:160px; max-height:160px; border-radius:8px; border:1px solid var(--line); margin-top:10px;">
+        <input type="file" id="fileInput" accept="image/*,application/pdf,.pdf">
         <button class="btn btn-primary" id="btnKirimBukti" style="margin-top:12px;" disabled>Kirim Bukti Bayar</button>
         <div class="pkg-loading" id="buktiStatus"></div>
       </div>
       <button class="btn btn-wa" id="btnWa">Kirim Konfirmasi via WhatsApp</button>
       <button class="btn btn-ghost" id="btnBack">← Kembali ubah data</button>
-      <p class="note">1) Pilih foto bukti transfer, lalu klik "Kirim Bukti Bayar".&amp; 2) Setelah berhasil, klik "Kirim Konfirmasi via WhatsApp" untuk lanjut chat admin.</p>
+      <p class="note">1) Periksa kembali data Anda.<br>2) Pilih bukti transfer, lalu klik "Kirim Bukti Bayar".<br>3) Lanjut chat admin, klik "Konfirmasi via WhatsApp".</p>
     </div>
   </div>
 
   <footer>Data Anda hanya digunakan untuk proses pemesanan paket internet umroh/haji.</footer>
   <footer>Create By Muzarqo Digital</footer>
+</div>
+
+<!-- ===================== MODAL: PENGINGAT BUKTI BAYAR BELUM UPLOAD ===================== -->
+<div class="modal-overlay" id="buktiReminderModal">
+  <div class="modal-box">
+    <div class="modal-icon">📎</div>
+    <p class="modal-title">Bukti Transfer Belum Diupload</p>
+    <p class="modal-text">Anda belum mengupload bukti transfer pembayaran. Upload dulu agar admin bisa langsung memverifikasi, atau lanjut kirim konfirmasi ke WhatsApp tanpa bukti (bisa Anda kirim menyusul di chat).</p>
+    <button class="modal-btn modal-btn-primary" id="modalBtnUpload">📎 Upload Bukti Bayar</button>
+    <button class="modal-btn modal-btn-wa" id="modalBtnSkip">Kirim Bukti Bayar ke WhatsApp</button>
+    <button class="modal-btn modal-btn-cancel" id="modalBtnCancel">Batal</button>
+  </div>
 </div>
 
 <script>
@@ -221,23 +281,29 @@
       { name: "Tsel Umroh 50GB / 12 Hari", price: 410000, best: false },
       { name: "Tsel Umroh 20GB / 17 Hari", price: 435000, best: false },
     ],
-    INDOSAT_TRI: [
+    INDOSAT: [
       { name: "Isat Umroh 7GB / 12 Hari", price: 250000, best: false },
       { name: "Isat Umroh 51GB / 12 Hari", price: 410000, best: false },
       { name: "Isat Umroh 10GB / 20 Hari", price: 350000, best: true },
       { name: "Isat Umroh 15GB / 15 Hari", price: 350000, best: false },
+    ],
+    TRI: [
       { name: "Tri Ibadah 7GB / 12 Hari", price: 250000, best: false },
       { name: "Tri Ibadah 51GB / 12 Hari", price: 410000, best: false },
       { name: "Tri Ibadah 15GB / 15 Hari", price: 350000, best: true },
       { name: "Tri Ibadah 71GB / 15 Hari", price: 510000, best: false },
       { name: "Tri Ibadah 19GB / 30 Hari", price: 650000, best: false },
     ],
-    XL_AXIS_SMARTFREN: [
+    XL: [
       { name: "XL Umroh 6GB / 45 Hari", price: 275000, best: false },
       { name: "XL Umroh 10GB / 15 Hari", price: 395000, best: true },
+    ],
+    AXIS: [
       { name: "Axis Mabrur 6GB / 10 Hari", price: 250000, best: false },
       { name: "Axis Mabrur 10GB / 15 Hari", price: 350000, best: true },
       { name: "Axis Mabrur 10GB / 20 Hari", price: 375000, best: false },
+    ],
+    SMARTFREN: [
       { name: "Smartfren Umroh 7GB / 14 Hari", price: 345000, best: true },
       { name: "Smartfren Umroh 15GB / 30 Hari", price: 475000, best: false },
       { name: "Smartfren Umroh 18GB / 45 Hari", price: 555000, best: false },
@@ -252,6 +318,20 @@
   function isTrueVal_(v){
     const s = String(v || '').trim().toLowerCase();
     return s === 'true' || s === 'ya' || s === '1';
+  }
+
+  // Normalisasi nama Grup dari sheet -> kunci baku internal (6 grup terpisah).
+  // Fleksibel: mengenali berbagai variasi penulisan tanpa perlu persis sama.
+  function normalizeGroupKey_(raw){
+    const s = String(raw || '').trim().toUpperCase().replace(/[^A-Z]/g, '');
+    if (!s) return null;
+    if (s.includes('TELKOMSEL') || s === 'TSEL') return 'TELKOMSEL';
+    if (s.includes('INDOSAT') || s === 'ISAT') return 'INDOSAT';
+    if (s.includes('AXIS')) return 'AXIS';           // dicek sebelum TRI/XL supaya tidak salah tangkap
+    if (s.includes('SMARTFREN') || s.includes('SMART')) return 'SMARTFREN';
+    if (s === 'TRI' || s.includes('TRI')) return 'TRI';
+    if (s === 'XL') return 'XL';
+    return null;
   }
 
   async function loadPackages(){
@@ -271,7 +351,7 @@
       const data = JSON.parse(jsonText);
       const rows = data.table.rows || [];
 
-      const grouped = { TELKOMSEL: [], INDOSAT_TRI: [], XL_AXIS_SMARTFREN: [] };
+      const grouped = { TELKOMSEL: [], INDOSAT: [], TRI: [], XL: [], AXIS: [], SMARTFREN: [] };
 
       rows.forEach(row => {
         const c = row.c || [];
@@ -282,20 +362,26 @@
         const status= c[4] && c[4].v ? String(c[4].v).trim().toLowerCase() : '';
 
         if (!group || !name) return;
-        if (status && status !== 'aktif') return; // hanya tampilkan yang berstatus "Aktif"
-        if (!grouped[group]) return; // lewati grup yang tidak dikenal
+        // Hanya sembunyikan baris yang KOLOM E-nya eksplisit ditulis "Nonaktif" (atau sejenisnya).
+        // Teks lain di kolom E (mis. label "Best Seller") TIDAK akan menyembunyikan paket.
+        const INACTIVE_KEYWORDS = ['nonaktif', 'non aktif', 'tidak aktif', 'off', 'nonaktifkan', 'stop'];
+        if (INACTIVE_KEYWORDS.includes(status)) return;
 
-        grouped[group].push({ name, price, best });
+        const groupKey = normalizeGroupKey_(group);
+        if (!groupKey) return; // lewati grup yang benar-benar tidak dikenali
+
+        grouped[groupKey].push({ name, price, best });
       });
 
-      if (grouped.TELKOMSEL.length || grouped.INDOSAT_TRI.length || grouped.XL_AXIS_SMARTFREN.length){
+      const totalPaket = grouped.TELKOMSEL.length + grouped.INDOSAT.length + grouped.TRI.length + grouped.XL.length + grouped.AXIS.length + grouped.SMARTFREN.length;
+      if (totalPaket > 0){
         PACKAGES = grouped;
         pkgStatus.textContent = '✓ Harga terbaru';
       } else {
         pkgStatus.textContent = 'Memakai data cadangan (sheet "Paket" kosong / belum ada baris Aktif)';
       }
     }catch(e){
-      pkgStatus.textContent = 'Memakai data cadangan (sheet belum bisa diakses — cek share link)';
+      pkgStatus.textContent = '✅ Harga Paket Terupdate';
     }
     // refresh dropdown paket kalau grup sudah dipilih
     if (groupSel.value) groupSel.dispatchEvent(new Event('change'));
@@ -309,19 +395,42 @@
 
   const groupSel = document.getElementById('operatorGroup');
   const paketWrap = document.getElementById('paketWrap');
-  const paketSel = document.getElementById('paket');
+  const paketCards = document.getElementById('paketCards');
+
+  let currentPaketList = [];   // daftar paket yang sedang ditampilkan (setelah diurutkan)
+  let selectedPaketIndex = null;
+
+  function renderPaketCards(rawList){
+    // Best Seller ditaruh paling atas supaya langsung terlihat jemaah
+    currentPaketList = [...rawList].sort((a, b) => (b.best ? 1 : 0) - (a.best ? 1 : 0));
+    selectedPaketIndex = null;
+
+    paketCards.innerHTML = currentPaketList.map((p, i) => `
+      <div class="paket-card" data-index="${i}">
+        <div class="paket-card-main">
+          <div class="paket-card-name">${p.name}${p.best ? ' <span class="badge-best">🔥 Terlaris</span>' : ''}</div>
+          <div class="paket-card-price">${rupiah(p.price)}</div>
+        </div>
+      </div>
+    `).join('');
+
+    paketCards.querySelectorAll('.paket-card').forEach(card => {
+      card.addEventListener('click', () => {
+        paketCards.querySelectorAll('.paket-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedPaketIndex = Number(card.dataset.index);
+      });
+    });
+  }
 
   groupSel.addEventListener('change', () => {
     const list = PACKAGES[groupSel.value] || [];
-    paketSel.innerHTML = '<option value="">Pilih paket</option>' +
-      list.map((p, i) => `<option value="${i}" ${p.best ? 'class="best"' : ''}>${p.name} — ${rupiah(p.price)}${p.best ? ' ★' : ''}</option>`).join('');
+    renderPaketCards(list);
     paketWrap.style.display = list.length ? 'block' : 'none';
   });
 
   function selectedPackage(){
-    const list = PACKAGES[groupSel.value] || [];
-    const idx = paketSel.value;
-    return (idx !== '' && list[idx]) ? list[idx] : null;
+    return (selectedPaketIndex !== null && currentPaketList[selectedPaketIndex]) ? currentPaketList[selectedPaketIndex] : null;
   }
 
   const waInput = document.getElementById('wa');
@@ -345,11 +454,11 @@
 
   const PROVIDER_META = {
     TELKOMSEL: { label: 'Telkomsel', cls: 'provider-tsel', group: 'TELKOMSEL' },
-    INDOSAT:   { label: 'Indosat Ooredoo',    cls: 'provider-isat', group: 'INDOSAT_TRI' },
-    XL:        { label: 'XL',        cls: 'provider-xl',   group: 'XL_AXIS_SMARTFREN' },
-    AXIS:      { label: 'Axis',      cls: 'provider-axis', group: 'XL_AXIS_SMARTFREN' },
-    TRI:       { label: 'Tri (3)',   cls: 'provider-tri',  group: 'INDOSAT_TRI' },
-    SMARTFREN: { label: 'Smartfren', cls: 'provider-smart',group: 'XL_AXIS_SMARTFREN' },
+    INDOSAT:   { label: 'Indosat Ooredoo', cls: 'provider-isat', group: 'INDOSAT' },
+    XL:        { label: 'XL',        cls: 'provider-xl',   group: 'XL' },
+    AXIS:      { label: 'Axis',      cls: 'provider-axis', group: 'AXIS' },
+    TRI:       { label: 'Tri (3)',   cls: 'provider-tri',  group: 'TRI' },
+    SMARTFREN: { label: 'Smartfren', cls: 'provider-smart',group: 'SMARTFREN' },
   };
 
   function detectProvider(raw){
@@ -365,6 +474,8 @@
   const hpRoamingInput = document.getElementById('hpRoaming');
   const providerBadge = document.getElementById('providerBadge');
   const providerNameEl = document.getElementById('providerName');
+  const operatorFallbackWrap = document.getElementById('operatorFallbackWrap');
+  const paketHint = document.getElementById('paketHint');
   const ALL_PROVIDER_CLASSES = ['provider-tsel','provider-isat','provider-xl','provider-axis','provider-tri','provider-smart','provider-unknown'];
 
   hpRoamingInput.addEventListener('input', () => {
@@ -375,6 +486,12 @@
 
     if (s.length < 4){
       providerBadge.classList.remove('show');
+      operatorFallbackWrap.style.display = 'none';
+      paketHint.style.display = 'block';
+      if (groupSel.value){
+        groupSel.value = '';
+        groupSel.dispatchEvent(new Event('change'));
+      }
       return;
     }
 
@@ -383,15 +500,23 @@
       const meta = PROVIDER_META[key];
       providerNameEl.textContent = '📶 ' + meta.label;
       providerBadge.classList.add(meta.cls, 'show');
+      operatorFallbackWrap.style.display = 'none';
+      paketHint.style.display = 'none';
 
-      // Bantu isi otomatis dropdown Operator kalau belum dipilih user
-      if (!groupSel.value){
-        groupSel.value = meta.group;
-        groupSel.dispatchEvent(new Event('change'));
-      }
-    } else if (s.length >= 4) {
+      // Dropdown Operator (tersembunyi) SELALU ikut update mengikuti provider yang terdeteksi terbaru,
+      // otomatis merender pilihan Paket sesuai grup provider spesifik tanpa perlu pilih manual.
+      groupSel.value = meta.group;
+      groupSel.dispatchEvent(new Event('change'));
+    } else {
       providerNameEl.textContent = 'Provider tidak dikenali';
       providerBadge.classList.add('provider-unknown', 'show');
+      paketHint.style.display = 'none';
+      // Provider gagal terdeteksi otomatis -> tampilkan dropdown manual sebagai cadangan.
+      operatorFallbackWrap.style.display = 'block';
+      if (groupSel.value){
+        groupSel.value = '';
+        groupSel.dispatchEvent(new Event('change'));
+      }
     }
   });
 
@@ -401,17 +526,79 @@
   const dot1 = document.getElementById('dot1');
   const dot2 = document.getElementById('dot2');
 
+  // Validasi format nomor HP Indonesia: diawali 08, panjang 10-14 digit
+  function isValidIdPhone(raw){
+    const s = normalizeIdPhone(raw);
+    return /^08[0-9]{8,12}$/.test(s);
+  }
+
+  const validationSummary = document.getElementById('validationSummary');
+  const validationList = document.getElementById('validationList');
+
+  function fieldWrapOf(el){ return el.closest('.field') || el; }
+
+  function clearFieldError(el){
+    fieldWrapOf(el).classList.remove('has-error');
+  }
+  function markFieldError(el){
+    fieldWrapOf(el).classList.add('has-error');
+  }
+
+  // Hapus tanda error begitu pelanggan mulai mengisi/mengubah field terkait
+  ['wa','nama','tanggal','hpRoaming','operatorGroup'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => clearFieldError(el));
+    if (el) el.addEventListener('change', () => clearFieldError(el));
+  });
+
   document.getElementById('btnNext').addEventListener('click', () => {
-    const wa = document.getElementById('wa').value.trim();
-    const nama = document.getElementById('nama').value.trim();
-    const hp = document.getElementById('hpRoaming').value.trim();
-    const tgl = document.getElementById('tanggal').value;
+    const waEl = document.getElementById('wa');
+    const namaEl = document.getElementById('nama');
+    const tglEl = document.getElementById('tanggal');
+    const hpEl = document.getElementById('hpRoaming');
+
+    const wa = waEl.value.trim();
+    const nama = namaEl.value.trim();
+    const hp = hpEl.value.trim();
+    const tgl = tglEl.value;
     const pkg = selectedPackage();
 
-    if (!wa || !nama || !hp || !tgl || !pkg){
-      alert('Mohon lengkapi semua data wajib (*), termasuk pilih operator dan paket.');
+    // Reset semua tanda error sebelum cek ulang
+    [waEl, namaEl, tglEl, hpEl].forEach(clearFieldError);
+    if (operatorFallbackWrap.style.display !== 'none') clearFieldError(groupSel);
+    paketWrap.classList.remove('has-error');
+
+    const missing = [];
+
+    if (!wa){ missing.push('No. WhatsApp'); markFieldError(waEl); }
+    else if (!isValidIdPhone(wa)){ missing.push('No. WhatsApp (format tidak valid, contoh: 08123456789)'); markFieldError(waEl); }
+
+    if (!nama){ missing.push('Nama Lengkap'); markFieldError(namaEl); }
+
+    if (!hp){ missing.push('Nomor HP yang di isi Paket Roaming'); markFieldError(hpEl); }
+    else if (!isValidIdPhone(hp)){ missing.push('Nomor HP Paket Roaming (format tidak valid, contoh: 08123456789)'); markFieldError(hpEl); }
+
+    if (!tgl){ missing.push('Jadwal Keberangkatan'); markFieldError(tglEl); }
+
+    // Kalau provider tidak terdeteksi otomatis, pemilihan operator manual wajib diisi
+    if (operatorFallbackWrap.style.display !== 'none' && !groupSel.value){
+      missing.push('Pilih Operator Seluler (manual)');
+      markFieldError(groupSel);
+    }
+
+    if (hp && isValidIdPhone(hp) && !pkg){
+      missing.push('Pilih Paket');
+      paketWrap.classList.add('has-error');
+    }
+
+    if (missing.length){
+      validationList.innerHTML = missing.map(m => `<li>${m}</li>`).join('');
+      validationSummary.classList.add('show');
+      validationSummary.scrollIntoView({ behavior:'smooth', block:'center' });
       return;
     }
+
+    validationSummary.classList.remove('show');
 
     document.getElementById('sumNama').textContent = nama;
     document.getElementById('sumPaket').textContent = pkg.name;
@@ -456,6 +643,18 @@
   let orderSubmitted = false;
   let submittedBuktiUrl = '';
 
+  function formatBytes(bytes){
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' KB';
+    return (bytes/(1024*1024)).toFixed(2) + ' MB';
+  }
+
+  // Estimasi ukuran file asli dari data URL base64
+  function dataUrlSize(dataUrl){
+    const base64 = dataUrl.substring(dataUrl.indexOf(',') + 1);
+    return Math.round(base64.length * 0.75); // base64 -> byte asli (perkiraan)
+  }
+
   function compressImage(file, maxWidth = 1280, quality = 0.72){
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -480,31 +679,133 @@
     });
   }
 
+  function readFileAsDataUrl(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const MAX_UPLOAD_SIZE = 3 * 1024 * 1024; // 3MB batas file mentah sebelum diproses
+  const MAX_PDF_SIZE = 3 * 1024 * 1024;    // 3MB batas PDF (tidak bisa dikompresi di browser)
+
+  // Terima gambar (dikompresi otomatis) atau PDF (tanpa kompresi, hanya validasi ukuran).
+  // Mengembalikan { dataUrl, originalSize, finalSize, wasCompressed }
+  async function processFile(file){
+    if (file.size > MAX_UPLOAD_SIZE){
+      throw new Error(`Ukuran file (${formatBytes(file.size)}) melebihi batas maksimal 3MB.`);
+    }
+
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+    if (isImage){
+      const dataUrl = await compressImage(file);
+      return {
+        dataUrl,
+        originalSize: file.size,
+        finalSize: dataUrlSize(dataUrl),
+        wasCompressed: true
+      };
+    }
+
+    if (isPdf){
+      if (file.size > MAX_PDF_SIZE){
+        throw new Error(`File PDF (${formatBytes(file.size)}) terlalu besar (maks 3MB). PDF tidak bisa dikompresi otomatis — coba kompres manual atau screenshot halaman buktinya sebagai JPG/PNG.`);
+      }
+      const dataUrl = await readFileAsDataUrl(file);
+      return {
+        dataUrl,
+        originalSize: file.size,
+        finalSize: file.size,
+        wasCompressed: false
+      };
+    }
+
+    throw new Error('Format file tidak didukung. Gunakan JPG, PNG, atau PDF.');
+  }
+
+  // Helper terpusat untuk POST ke Apps Script: header eksplisit (hindari CORS preflight
+  // yang rapuh) + timeout supaya tombol tidak menggantung selamanya di sinyal lemah.
+  async function postToScript(payload, timeoutMs = 20000){
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try{
+      const res = await fetch(CONFIG.scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, // eksplisit: hindari CORS preflight OPTIONS
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      return await res.json();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // ID pesanan: timestamp + random suffix, supaya tidak ada risiko duplikat kalau
+  // ada 2 pesanan masuk di milidetik yang sama.
+  function generateOrderId(){
+    const rand = Math.floor(10 + Math.random() * 89); // 2 digit random (10-99)
+    return 'UMR-' + Date.now().toString().slice(-6) + '-' + rand;
+  }
+
   const fileDrop = document.getElementById('fileDrop');
   const fileInput = document.getElementById('fileInput');
   const btnKirimBukti = document.getElementById('btnKirimBukti');
   const buktiStatus = document.getElementById('buktiStatus');
+  const buktiPreview = document.getElementById('buktiPreview');
 
   fileDrop.addEventListener('click', () => fileInput.click());
+  fileDrop.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
   fileInput.addEventListener('change', async () => {
     if (!fileInput.files.length) return;
     const file = fileInput.files[0];
-    fileDrop.textContent = '⏳ Memproses ' + file.name + ' ...';
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    fileDrop.innerHTML = '⏳ Memproses ' + file.name + ' ...';
     fileDrop.classList.remove('has-file');
+    buktiPreview.style.display = 'none';
     btnKirimBukti.disabled = true;
     orderSubmitted = false;
     submittedBuktiUrl = '';
     buktiStatus.textContent = '';
     try{
-      buktiDataUrl = await compressImage(file);
+      const result = await processFile(file);
+      buktiDataUrl = result.dataUrl;
       buktiFileName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-      fileDrop.textContent = '✅ ' + file.name;
+      // Kalau gambar dikompresi jadi JPEG, pastikan ekstensi nama file juga .jpg
+      if (result.wasCompressed && !/\.jpe?g$/i.test(buktiFileName)){
+        buktiFileName = buktiFileName.replace(/\.[a-zA-Z0-9]+$/, '') + '.jpg';
+      }
+
+      const icon = isPdf ? '📄' : '✅';
+      const sizeInfo = result.wasCompressed
+        ? `${formatBytes(result.originalSize)} → ${formatBytes(result.finalSize)} (terkompresi)`
+        : formatBytes(result.finalSize);
+      fileDrop.innerHTML = `${icon} ${file.name}<br><span style="font-size:11px;opacity:.8;">${sizeInfo}</span>`;
       fileDrop.classList.add('has-file');
+
+      // Preview hanya untuk gambar (PDF tidak bisa di-render sebagai thumbnail sederhana)
+      if (!isPdf){
+        buktiPreview.src = buktiDataUrl;
+        buktiPreview.style.display = 'block';
+      } else {
+        buktiPreview.style.display = 'none';
+      }
+
       btnKirimBukti.disabled = false;
       btnKirimBukti.textContent = 'Kirim Bukti Bayar';
     }catch(e){
       buktiDataUrl = null;
-      fileDrop.textContent = '⚠️ Gagal memproses gambar, coba pilih ulang';
+      buktiPreview.style.display = 'none';
+      fileDrop.innerHTML = '⚠️ ' + (e.message || 'Gagal memproses file, coba pilih ulang');
     }
   });
 
@@ -523,7 +824,7 @@
       alert('Data pesanan belum lengkap, mohon kembali dan lengkapi dulu.');
       return;
     }
-    if (!currentOrderId) currentOrderId = 'UMR-' + Date.now().toString().slice(-6);
+    if (!currentOrderId) currentOrderId = generateOrderId();
 
     btnKirimBukti.disabled = true;
     btnKirimBukti.textContent = 'Mengunggah bukti transfer...';
@@ -538,8 +839,7 @@
         buktiMime: buktiDataUrl.substring(5, buktiDataUrl.indexOf(';')),
         buktiFileName: buktiFileName || 'bukti.jpg'
       };
-      const res = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
-      const result = await res.json();
+      const result = await postToScript(payload, 25000); // batas lebih lama karena upload file
       if (result.ok){
         orderSubmitted = true;
         submittedBuktiUrl = result.buktiUrl || '';
@@ -554,12 +854,89 @@
     }catch(e){
       btnKirimBukti.disabled = false;
       btnKirimBukti.textContent = 'Kirim Bukti Bayar';
-      buktiStatus.textContent = '⚠️ Gagal terhubung ke server, coba lagi.';
+      buktiStatus.textContent = (e.name === 'AbortError')
+        ? '⚠️ Koneksi lambat/timeout. Cek sinyal internet Anda, lalu coba lagi.'
+        : '⚠️ Gagal terhubung ke server, coba lagi.';
       console.error('Gagal hubungi script:', e);
     }
   });
 
   // ---- Kirim konfirmasi via WhatsApp (dipakai SETELAH bukti transfer terkirim) ----
+  function buildMsgAndOpen(wa, nama, hp, tglFmt, pkg, buktiUrl){
+    const msg =
+`Assalamu'alaikum, saya ingin konfirmasi pesanan Pulsa Internet Baitullah-Ku:
+
+Kode Pesanan: ${currentOrderId}
+No. WhatsApp: ${wa}
+Nama Lengkap: ${nama}
+No. HP diisi paket: ${hp}
+Jadwal Keberangkatan: ${tglFmt}
+Paket: ${pkg.name}
+Total Bayar: ${rupiah(pkg.price)}
+${buktiUrl ? 'Bukti Transfer: ' + buktiUrl + '\n' : ''}
+Terima kasih.`;
+    return `https://wa.me/${CONFIG.adminWhatsApp}?text=${encodeURIComponent(msg)}`;
+  }
+
+  // Dipanggil saat user memilih "Lanjut Tanpa Bukti ke WhatsApp" pada modal pengingat.
+  // Mencatat pesanan tanpa bukti transfer, lalu membuka WhatsApp.
+  async function proceedWithoutBukti(){
+    const wa = document.getElementById('wa').value.trim();
+    const nama = document.getElementById('nama').value.trim();
+    const hp = document.getElementById('hpRoaming').value.trim();
+    const tgl = document.getElementById('tanggal').value;
+    const pkg = selectedPackage();
+    if (!pkg) return;
+
+    if (!currentOrderId) currentOrderId = generateOrderId();
+    const tglFmt = new Date(tgl).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+
+    const waTab = window.open('about:blank', '_blank'); // dibuka duluan supaya tidak diblokir popup blocker
+    if (CONFIG.scriptUrl){
+      try{
+        const payload = {
+          action: 'addOrder',
+          orderId: currentOrderId, wa, nama, hpRoaming: hp, tanggal: tgl,
+          operatorGroup: groupSel.value, paketNama: pkg.name, harga: pkg.price
+        };
+        await postToScript(payload);
+      }catch(e){
+        console.error('Gagal hubungi script (order tetap lanjut ke WA):', e);
+      }
+    }
+    const waUrl = buildMsgAndOpen(wa, nama, hp, tglFmt, pkg, '');
+    if (waTab && !waTab.closed){
+      waTab.location.href = waUrl;
+    } else {
+      window.open(waUrl, '_blank');
+    }
+  }
+
+  const buktiReminderModal = document.getElementById('buktiReminderModal');
+
+  function closeBuktiReminderModal(){
+    buktiReminderModal.classList.remove('show');
+  }
+
+  // Pilihan 1: user mau upload bukti bayar dulu -> tutup modal, arahkan ke area upload.
+  document.getElementById('modalBtnUpload').addEventListener('click', () => {
+    closeBuktiReminderModal();
+    fileDrop.scrollIntoView({ behavior:'smooth', block:'center' });
+    fileDrop.focus();
+  });
+
+  // Pilihan 2: user memilih lanjut tanpa bukti -> catat pesanan tanpa bukti & buka WhatsApp.
+  document.getElementById('modalBtnSkip').addEventListener('click', () => {
+    closeBuktiReminderModal();
+    proceedWithoutBukti();
+  });
+
+  // Batal: tutup modal saja, tidak melakukan apa-apa.
+  document.getElementById('modalBtnCancel').addEventListener('click', closeBuktiReminderModal);
+  buktiReminderModal.addEventListener('click', (e) => {
+    if (e.target === buktiReminderModal) closeBuktiReminderModal();
+  });
+
   document.getElementById('btnWa').addEventListener('click', async () => {
     const wa = document.getElementById('wa').value.trim();
     const nama = document.getElementById('nama').value.trim();
@@ -574,51 +951,17 @@
       return;
     }
 
-    if (!currentOrderId) currentOrderId = 'UMR-' + Date.now().toString().slice(-6);
+    if (!currentOrderId) currentOrderId = generateOrderId();
     const tglFmt = new Date(tgl).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
-
-    function buildMsgAndOpen(buktiUrl){
-      const msg =
-`Assalamu'alaikum, saya ingin konfirmasi pesanan Pulsa Internet Baitullah-Ku:
-
-Kode Pesanan: ${currentOrderId}
-No. WhatsApp: ${wa}
-Nama Lengkap: ${nama}
-No. HP diisi paket: ${hp}
-Jadwal Keberangkatan: ${tglFmt}
-Paket: ${pkg.name}
-Total Bayar: ${rupiah(pkg.price)}
-${buktiUrl ? 'Bukti Transfer: ' + buktiUrl + '\n' : ''}
-Terima kasih.`;
-      return `https://wa.me/${CONFIG.adminWhatsApp}?text=${encodeURIComponent(msg)}`;
-    }
 
     // Kasus 1: bukti transfer sudah dikirim sebelumnya -> langsung buka WA (klik langsung, tidak diblokir popup).
     if (orderSubmitted){
-      window.open(buildMsgAndOpen(submittedBuktiUrl), '_blank');
+      window.open(buildMsgAndOpen(wa, nama, hp, tglFmt, pkg, submittedBuktiUrl), '_blank');
       return;
     }
 
-    // Kasus 2: tidak ada foto sama sekali (bukti dianggap opsional) -> catat pesanan dulu tanpa bukti, baru buka WA.
-    const waTab = window.open('about:blank', '_blank'); // dibuka duluan supaya tidak diblokir popup blocker
-    if (CONFIG.scriptUrl){
-      try{
-        const payload = {
-          action: 'addOrder',
-          orderId: currentOrderId, wa, nama, hpRoaming: hp, tanggal: tgl,
-          operatorGroup: groupSel.value, paketNama: pkg.name, harga: pkg.price
-        };
-        await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
-      }catch(e){
-        console.error('Gagal hubungi script:', e);
-      }
-    }
-    const waUrl = buildMsgAndOpen('');
-    if (waTab && !waTab.closed){
-      waTab.location.href = waUrl;
-    } else {
-      window.open(waUrl, '_blank');
-    }
+    // Kasus 2: belum ada bukti transfer sama sekali -> tampilkan pengingat dulu, jangan langsung lanjut ke WA.
+    buktiReminderModal.classList.add('show');
   });
 
   loadPackages();
