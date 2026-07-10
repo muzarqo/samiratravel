@@ -266,46 +266,11 @@
     // Biarkan kosong "" jika belum siap -- konfirmasi WA tetap jalan, hanya pencatatan yang dilewati.
     scriptUrl: "https://script.google.com/macros/s/AKfycbyukSCN-vt_XkiHGl9o_yCm978qnKOumrB4NSewJZUtoExKzT0TpNLuAnyL3IvhgKy_sA/exec"
   };
-
-  // Data cadangan (dipakai jika scriptUrl kosong / spreadsheet belum bisa diakses)
-  const FALLBACK_PACKAGES = {
-    TELKOMSEL: [
-      { name: "Tsel Umroh 10GB / 12 Hari", price: 310000, best: false },
-      { name: "Tsel Umroh 10GB / 17 Hari", price: 385000, best: true },
-      { name: "Tsel Umroh 50GB / 12 Hari", price: 410000, best: false },
-      { name: "Tsel Umroh 20GB / 17 Hari", price: 435000, best: false },
-    ],
-    INDOSAT: [
-      { name: "Isat Umroh 7GB / 12 Hari", price: 250000, best: false },
-      { name: "Isat Umroh 51GB / 12 Hari", price: 410000, best: false },
-      { name: "Isat Umroh 10GB / 20 Hari", price: 350000, best: true },
-      { name: "Isat Umroh 15GB / 15 Hari", price: 350000, best: false },
-    ],
-    TRI: [
-      { name: "Tri Ibadah 7GB / 12 Hari", price: 250000, best: false },
-      { name: "Tri Ibadah 51GB / 12 Hari", price: 410000, best: false },
-      { name: "Tri Ibadah 15GB / 15 Hari", price: 350000, best: true },
-      { name: "Tri Ibadah 71GB / 15 Hari", price: 510000, best: false },
-      { name: "Tri Ibadah 19GB / 30 Hari", price: 650000, best: false },
-    ],
-    XL: [
-      { name: "XL Umroh 6GB / 45 Hari", price: 275000, best: false },
-      { name: "XL Umroh 10GB / 15 Hari", price: 395000, best: true },
-    ],
-    AXIS: [
-      { name: "Axis Mabrur 6GB / 10 Hari", price: 250000, best: false },
-      { name: "Axis Mabrur 10GB / 15 Hari", price: 350000, best: true },
-      { name: "Axis Mabrur 10GB / 20 Hari", price: 375000, best: false },
-    ],
-    SMARTFREN: [
-      { name: "Smartfren Umroh 7GB / 14 Hari", price: 345000, best: true },
-      { name: "Smartfren Umroh 15GB / 30 Hari", price: 475000, best: false },
-      { name: "Smartfren Umroh 18GB / 45 Hari", price: 555000, best: false },
-    ],
-  };
   // =======================================================================
 
-  let PACKAGES = FALLBACK_PACKAGES;
+  // PACKAGES diisi live dari Google Sheets (lihat loadPackages()).
+  // Default kosong dulu supaya tidak error kalau sheet gagal diakses.
+  let PACKAGES = { TELKOMSEL: [], INDOSAT: [], TRI: [], XL: [], AXIS: [], SMARTFREN: [] };
   const pkgStatus = document.getElementById('pkgStatus');
 
   // Kolom A:E sheet "Paket" -> Group, Nama Paket, Harga, Best Seller, Status
@@ -372,10 +337,11 @@
         PACKAGES = grouped;
         pkgStatus.textContent = '✓ Harga terbaru';
       } else {
-        pkgStatus.textContent = 'Memakai data cadangan (sheet "Paket" kosong / belum ada baris Aktif)';
+        pkgStatus.textContent = '⚠️ Belum ada paket aktif ditemukan di sheet "Paket"';
       }
     }catch(e){
-      pkgStatus.textContent = '✅ Harga Paket Terupdate';
+      pkgStatus.textContent = '⚠️ Gagal memuat daftar paket. Cek koneksi internet Anda atau hubungi admin.';
+      console.error('Gagal ambil data sheet Paket:', e);
     }
     // refresh dropdown paket kalau grup sudah dipilih
     if (groupSel.value) groupSel.dispatchEvent(new Event('change'));
