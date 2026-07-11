@@ -790,6 +790,13 @@
     btnKirimBukti.textContent = 'Mengunggah bukti transfer...';
     buktiStatus.textContent = '';
 
+    if (!CONFIG.scriptUrl){
+      btnKirimBukti.disabled = false;
+      btnKirimBukti.textContent = 'Kirim Bukti Bayar';
+      buktiStatus.textContent = '⚠️ scriptUrl belum diisi di CONFIG, bukti tidak bisa dicatat ke sheet.';
+      return;
+    }
+
     try{
       const payload = {
         action: 'addOrder',
@@ -804,11 +811,15 @@
         orderSubmitted = true;
         submittedBuktiUrl = result.buktiUrl || '';
         btnKirimBukti.textContent = '✅ Bukti Terkirim';
-        buktiStatus.textContent = 'Bukti transfer berhasil diunggah & tercatat. Silakan lanjut ke WhatsApp.';
+        buktiStatus.textContent = result.buktiError
+          ? '✅ Pesanan tercatat, namun upload foto bermasalah (' + result.buktiError + '). Silakan kirim ulang foto ke admin via WhatsApp.'
+          : 'Bukti transfer berhasil diunggah & tercatat. Silakan lanjut ke WhatsApp.';
       } else {
         btnKirimBukti.disabled = false;
         btnKirimBukti.textContent = 'Kirim Bukti Bayar';
-        buktiStatus.textContent = '⚠️ Gagal mengirim bukti transfer, coba lagi.';
+        // Tampilkan alasan gagal apa adanya supaya bisa langsung ketahuan penyebabnya
+        // (mis. izin akses spreadsheet, deployment belum di-update, dll).
+        buktiStatus.textContent = '⚠️ Gagal mencatat pesanan: ' + (result.error || 'penyebab tidak diketahui') + '. Coba lagi, atau hubungi admin.';
         console.error('Gagal mencatat pesanan:', result.error);
       }
     }catch(e){
@@ -859,6 +870,9 @@ Terima kasih.`;
 
     // Tab dibuka SEKARANG (masih dalam konteks klik tombol modal) supaya tidak diblokir popup blocker.
     const waTab = window.open('about:blank', '_blank');
+    let recordFailed = false;
+    let recordErrorMsg = '';
+
     if (CONFIG.scriptUrl){
       try{
         const payload = {
@@ -866,11 +880,28 @@ Terima kasih.`;
           orderId: currentOrderId, wa, nama, hpRoaming: hp, tanggal: tgl,
           operatorGroup: groupSel.value, paketNama: pkg.name, harga: pkg.price
         };
-        await postToScript(payload);
+        const result = await postToScript(payload);
+        // PENTING: cek hasilnya. Sebelumnya respons ini tidak pernah diperiksa,
+        // sehingga kegagalan pencatatan ke sheet jadi tidak terlihat sama sekali.
+        if (!result || !result.ok){
+          recordFailed = true;
+          recordErrorMsg = (result && result.error) ? result.error : 'Tidak ada respons dari server';
+          console.error('Gagal mencatat pesanan (tanpa bukti):', recordErrorMsg);
+        }
       }catch(e){
+        recordFailed = true;
+        recordErrorMsg = (e.name === 'AbortError') ? 'Koneksi timeout' : String(e.message || e);
         console.error('Gagal hubungi script (order tetap lanjut ke WA):', e);
       }
     }
+
+    // Tetap lanjut buka WA (sesuai alur bisnis: WA adalah kanal komunikasi utama),
+    // tapi user diberi tahu kalau pencatatan otomatis ke sheet gagal, supaya admin
+    // bisa mencatat manual dari chat WA.
+    if (recordFailed){
+      alert('Catatan: pesanan berhasil dikirim ke WhatsApp, TAPI pencatatan otomatis ke sistem gagal (' + recordErrorMsg + '). Admin akan mencatat pesanan Anda secara manual dari chat WhatsApp.');
+    }
+
     const waUrl = buildWaUrl('');
     if (waTab && !waTab.closed){
       waTab.location.href = waUrl;
