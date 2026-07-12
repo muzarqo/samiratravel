@@ -258,13 +258,13 @@
     // ID spreadsheet Anda (dari URL: .../d/ID_INI/edit)
     // Dipakai untuk BACA daftar paket langsung dari sheet "Paket" (kolom A:E).
     // Sheet WAJIB di-share: General access -> "Anyone with the link" -> Viewer.
-    sheetId: "1Qdd0jYOAQthtmrvWM9cZYqJv-wIwK6GxS1JQWs9hTj0",
+    sheetId: "1gL6Lz2Ed6mkTgVTLUnKEFz9fNS5W_0Gcrv6bBYKOvoc",
     sheetNamaPaket: "Paket",
 
     // Isi dengan Web App URL Apps Script Anda (lihat panduan Code.gs).
     // Dipakai untuk MENCATAT pesanan + upload bukti transfer ke sheet "Pesanan".
     // Biarkan kosong "" jika belum siap -- konfirmasi WA tetap jalan, hanya pencatatan yang dilewati.
-    scriptUrl: "https://script.google.com/macros/s/AKfycbwAwG_9CGpG_J3kkdxveORl81nKxXqnVCVGIcFRHJvT9svtE4h9VZ5Ykq1H-sgxR9ieew/exec"
+    scriptUrl: "https://script.google.com/macros/s/AKfycbxcOEB22XeH5FqLmUX3D_MwXVMwHmlIGcvUjlISiyQYYn2Yeo8bCr-hxt9h62IWs5Ix7g/exec"
   };
   // =======================================================================
 
@@ -300,7 +300,9 @@
     }
     pkgStatus.textContent = 'Memuat harga terbaru...';
     try{
-      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.sheetNamaPaket)}&headers=1`;
+      // range=N:R -> sheet Paket menyimpan data di kolom N s.d. R:
+      // N=Grup, O=Nama Paket, P=Harga, Q=SKBest (label teks, tidak dipakai logika), R=Best Seller (TRUE/FALSE)
+      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.sheetNamaPaket)}&range=N:R&headers=1`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Sheet tidak bisa diakses (cek pengaturan share)');
       const text = await res.text();
@@ -314,17 +316,15 @@
 
       rows.forEach(row => {
         const c = row.c || [];
-        const group = c[0] && c[0].v ? String(c[0].v).trim() : '';
-        const name  = c[1] && c[1].v ? String(c[1].v).trim() : '';
-        const price = c[2] && c[2].v ? Number(c[2].v) : 0;
-        const best  = c[3] ? isTrueVal_(c[3].v) : false;
-        const status= c[4] && c[4].v ? String(c[4].v).trim().toLowerCase() : '';
+        const group = c[0] && c[0].v ? String(c[0].v).trim() : '';   // N: Grup
+        const name  = c[1] && c[1].v ? String(c[1].v).trim() : '';   // O: Nama Paket
+        const price = c[2] && c[2].v ? Number(c[2].v) : 0;           // P: Harga
+        // c[3] = Q: SKBest (label teks "Best Seller"/kosong) -- tidak dipakai untuk logika
+        const best  = c[4] ? isTrueVal_(c[4].v) : false;             // R: Best Seller (TRUE/FALSE)
 
         if (!group || !name) return;
-        // Hanya sembunyikan baris yang KOLOM E-nya eksplisit ditulis "Nonaktif" (atau sejenisnya).
-        // Teks lain di kolom E (mis. label "Best Seller") TIDAK akan menyembunyikan paket.
-        const INACTIVE_KEYWORDS = ['nonaktif', 'non aktif', 'tidak aktif', 'off', 'nonaktifkan', 'stop'];
-        if (INACTIVE_KEYWORDS.includes(status)) return;
+        // Tidak ada kolom Status (aktif/nonaktif) di rentang N:R -- semua baris yang
+        // punya Grup + Nama Paket terisi otomatis dianggap aktif dan ditampilkan.
 
         const groupKey = normalizeGroupKey_(group);
         if (!groupKey) return; // lewati grup yang benar-benar tidak dikenali
@@ -790,13 +790,6 @@
     btnKirimBukti.textContent = 'Mengunggah bukti transfer...';
     buktiStatus.textContent = '';
 
-    if (!CONFIG.scriptUrl){
-      btnKirimBukti.disabled = false;
-      btnKirimBukti.textContent = 'Kirim Bukti Bayar';
-      buktiStatus.textContent = '⚠️ scriptUrl belum diisi di CONFIG, bukti tidak bisa dicatat ke sheet.';
-      return;
-    }
-
     try{
       const payload = {
         action: 'addOrder',
@@ -811,15 +804,11 @@
         orderSubmitted = true;
         submittedBuktiUrl = result.buktiUrl || '';
         btnKirimBukti.textContent = '✅ Bukti Terkirim';
-        buktiStatus.textContent = result.buktiError
-          ? '✅ Pesanan tercatat, namun upload foto bermasalah (' + result.buktiError + '). Silakan kirim ulang foto ke admin via WhatsApp.'
-          : 'Bukti transfer berhasil diunggah & tercatat. Silakan lanjut ke WhatsApp.';
+        buktiStatus.textContent = 'Bukti transfer berhasil diunggah & tercatat. Silakan lanjut ke WhatsApp.';
       } else {
         btnKirimBukti.disabled = false;
         btnKirimBukti.textContent = 'Kirim Bukti Bayar';
-        // Tampilkan alasan gagal apa adanya supaya bisa langsung ketahuan penyebabnya
-        // (mis. izin akses spreadsheet, deployment belum di-update, dll).
-        buktiStatus.textContent = '⚠️ Gagal mencatat pesanan: ' + (result.error || 'penyebab tidak diketahui') + '. Coba lagi, atau hubungi admin.';
+        buktiStatus.textContent = '⚠️ Gagal mengirim bukti transfer, coba lagi.';
         console.error('Gagal mencatat pesanan:', result.error);
       }
     }catch(e){
@@ -870,9 +859,6 @@ Terima kasih.`;
 
     // Tab dibuka SEKARANG (masih dalam konteks klik tombol modal) supaya tidak diblokir popup blocker.
     const waTab = window.open('about:blank', '_blank');
-    let recordFailed = false;
-    let recordErrorMsg = '';
-
     if (CONFIG.scriptUrl){
       try{
         const payload = {
@@ -880,28 +866,11 @@ Terima kasih.`;
           orderId: currentOrderId, wa, nama, hpRoaming: hp, tanggal: tgl,
           operatorGroup: groupSel.value, paketNama: pkg.name, harga: pkg.price
         };
-        const result = await postToScript(payload);
-        // PENTING: cek hasilnya. Sebelumnya respons ini tidak pernah diperiksa,
-        // sehingga kegagalan pencatatan ke sheet jadi tidak terlihat sama sekali.
-        if (!result || !result.ok){
-          recordFailed = true;
-          recordErrorMsg = (result && result.error) ? result.error : 'Tidak ada respons dari server';
-          console.error('Gagal mencatat pesanan (tanpa bukti):', recordErrorMsg);
-        }
+        await postToScript(payload);
       }catch(e){
-        recordFailed = true;
-        recordErrorMsg = (e.name === 'AbortError') ? 'Koneksi timeout' : String(e.message || e);
         console.error('Gagal hubungi script (order tetap lanjut ke WA):', e);
       }
     }
-
-    // Tetap lanjut buka WA (sesuai alur bisnis: WA adalah kanal komunikasi utama),
-    // tapi user diberi tahu kalau pencatatan otomatis ke sheet gagal, supaya admin
-    // bisa mencatat manual dari chat WA.
-    if (recordFailed){
-      alert('Catatan: pesanan berhasil dikirim ke WhatsApp, TAPI pencatatan otomatis ke sistem gagal (' + recordErrorMsg + '). Admin akan mencatat pesanan Anda secara manual dari chat WhatsApp.');
-    }
-
     const waUrl = buildWaUrl('');
     if (waTab && !waTab.closed){
       waTab.location.href = waUrl;
