@@ -867,7 +867,7 @@ No. HP diisi paket: ${hp}
 Jadwal Keberangkatan: ${tglFmt}
 Paket: ${pkg.name}
 Total Bayar: ${rupiah(pkg.price)}
-${buktiUrl ? 'Bukti Transfer: ' + buktiUrl + '\n' : ''}
+${buktiUrl ? 'Bukti Transfer: ' + buktiUrl + '\n' : 'Bukti Transfer: Menyusul, akan saya kirimkan foto/bukti transfernya di chat ini.\n'}
 Terima kasih.`;
     return `https://wa.me/${CONFIG.adminWhatsApp}?text=${encodeURIComponent(msg)}`;
   }
